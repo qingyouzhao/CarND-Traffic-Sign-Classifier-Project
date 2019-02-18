@@ -8,3 +8,7 @@ traffic-signs-data.zip
 traffic-signs-data/
 .idea/
 .idea/vcs.xml
+lenet.data-00000-of-00001
+checkpoint
+lenet.index
+lenet.meta
