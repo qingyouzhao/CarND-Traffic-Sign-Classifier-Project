@@ -1,0 +1,1368 @@
+<html>
+<head>
+<title>Traffic_Sign_Classifier.ipynb</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+.s0 { color: #a9b7c6;}
+</style>
+</head>
+<body bgcolor="#2b2b2b">
+<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#606060" >
+<tr><td><center>
+<font face="Arial, Helvetica" color="#000000">
+Traffic_Sign_Classifier.ipynb</font>
+</center></td></tr></table>
+<pre><span class="s0">{ 
+ &quot;cells&quot;: [ 
+  { 
+   &quot;cell_type&quot;: &quot;markdown&quot;, 
+   &quot;metadata&quot;: {}, 
+   &quot;source&quot;: [ 
+    &quot;# Self-Driving Car Engineer Nanodegree\n&quot;, 
+    &quot;\n&quot;, 
+    &quot;## Deep Learning\n&quot;, 
+    &quot;\n&quot;, 
+    &quot;## Project: Build a Traffic Sign Recognition Classifier\n&quot;, 
+    &quot;\n&quot;, 
+    &quot;In this notebook, a template is provided for you to implement your functionality in stages, which is required to successfully complete this project. If additional code is required that cannot be included in the notebook, be sure that the Python code is successfully imported and included in your submission if necessary. \n&quot;, 
+    &quot;\n&quot;, 
+    &quot;&gt; **Note**: Once you have completed all of the code implementations, you need to finalize your work by exporting the iPython Notebook as an HTML document. Before exporting the notebook to html, all of the code cells need to have been run so that reviewers can see the final implementation and output. You can then export the notebook by using the menu above and navigating to  \\n\&quot;,\n&quot;, 
+    &quot;    \&quot;**File -&gt; Download as -&gt; HTML (.html)**. Include the finished document along with this notebook as your submission. \n&quot;, 
+    &quot;\n&quot;, 
+    &quot;In addition to implementing code, there is a writeup to complete. The writeup should be completed in a separate file, which can be either a markdown file or a pdf document. There is a [write up template](https://github.com/udacity/CarND-Traffic-Sign-Classifier-Project/blob/master/writeup_template.md) that can be used to guide the writing process. Completing the code template and writeup template will cover all of the [rubric points](https://review.udacity.com/#!/rubrics/481/view) for this project.\n&quot;, 
+    &quot;\n&quot;, 
+    &quot;The [rubric](https://review.udacity.com/#!/rubrics/481/view) contains \&quot;Stand Out Suggestions\&quot; for enhancing the project beyond the minimum requirements. The stand out suggestions are optional. If you decide to pursue the \&quot;stand out suggestions\&quot;, you can include the code in this Ipython notebook and also discuss the results in the writeup file.\n&quot;, 
+    &quot;\n&quot;, 
+    &quot;\n&quot;, 
+    &quot;&gt;**Note:** Code and Markdown cells can be executed using the **Shift + Enter** keyboard shortcut. In addition, Markdown cells can be edited by typically double-clicking the cell to enter edit mode.&quot; 
+   ] 
+  }, 
+  { 
+   &quot;cell_type&quot;: &quot;markdown&quot;, 
+   &quot;metadata&quot;: {}, 
+   &quot;source&quot;: [ 
+    &quot;---\n&quot;, 
+    &quot;## Step 0: Load The Data&quot; 
+   ] 
+  }, 
+  { 
+   &quot;cell_type&quot;: &quot;code&quot;, 
+   &quot;execution_count&quot;: 1, 
+   &quot;metadata&quot;: { 
+    &quot;collapsed&quot;: false 
+   }, 
+   &quot;outputs&quot;: [], 
+   &quot;source&quot;: [ 
+    &quot;# Load pickled data\n&quot;, 
+    &quot;import pickle\n&quot;, 
+    &quot;import os\n&quot;, 
+    &quot;import numpy as np\n&quot;, 
+    &quot;import pandas as pd\n&quot;, 
+    &quot;import matplotlib.pyplot as plt\n&quot;, 
+    &quot;import random\n&quot;, 
+    &quot;\n&quot;, 
+    &quot;from sklearn.utils import shuffle\n&quot;, 
+    &quot;import cv2\n&quot;, 
+    &quot;import tensorflow as tf&quot; 
+   ] 
+  }, 
+  { 
+   &quot;cell_type&quot;: &quot;code&quot;, 
+   &quot;execution_count&quot;: 58, 
+   &quot;metadata&quot;: { 
+    &quot;collapsed&quot;: false 
+   }, 
+   &quot;outputs&quot;: [], 
+   &quot;source&quot;: [ 
+    &quot;\n&quot;, 
+    &quot;\n&quot;, 
+    &quot;# TODO: Fill this in based on where you saved the training and testing data\n&quot;, 
+    &quot;data_dir = \&quot;traffic-signs-data\&quot;\n&quot;, 
+    &quot;training_file = os.path.join(data_dir, \&quot;train.p\&quot;)\n&quot;, 
+    &quot;validation_file=os.path.join(data_dir, \&quot;valid.p\&quot;)\n&quot;, 
+    &quot;testing_file = os.path.join(data_dir, \&quot;test.p\&quot;)\n&quot;, 
+    &quot;\n&quot;, 
+    &quot;with open(training_file, mode='rb') as f:\n&quot;, 
+    &quot;    train = pickle.load(f)\n&quot;, 
+    &quot;with open(validation_file, mode='rb') as f:\n&quot;, 
+    &quot;    valid = pickle.load(f)\n&quot;, 
+    &quot;with open(testing_file, mode='rb') as f:\n&quot;, 
+    &quot;    test = pickle.load(f)\n&quot;, 
+    &quot;    \n&quot;, 
+    &quot;X_train, y_train = train['features'], train['labels']\n&quot;, 
+    &quot;X_valid, y_valid = valid['features'], valid['labels']\n&quot;, 
+    &quot;X_test, y_test = test['features'], test['labels']\n&quot; 
+   ] 
+  }, 
+  { 
+   &quot;cell_type&quot;: &quot;markdown&quot;, 
+   &quot;metadata&quot;: {}, 
+   &quot;source&quot;: [ 
+    &quot;---\n&quot;, 
+    &quot;\n&quot;, 
+    &quot;## Step 1: Dataset Summary &amp; Exploration\n&quot;, 
+    &quot;\n&quot;, 
+    &quot;The pickled data is a dictionary with 4 key/value pairs:\n&quot;, 
+    &quot;\n&quot;, 
+    &quot;- `'features'` is a 4D array containing raw pixel data of the traffic sign images, (num examples, width, height, channels).\n&quot;, 
+    &quot;- `'labels'` is a 1D array containing the label/class id of the traffic sign. The file `signnames.csv` contains id -&gt; name mappings for each id.\n&quot;, 
+    &quot;- `'sizes'` is a list containing tuples, (width, height) representing the original width and height the image.\n&quot;, 
+    &quot;- `'coords'` is a list containing tuples, (x1, y1, x2, y2) representing coordinates of a bounding box around the sign in the image. **THESE COORDINATES ASSUME THE ORIGINAL IMAGE. THE PICKLED DATA CONTAINS RESIZED VERSIONS (32 by 32) OF THESE IMAGES**\n&quot;, 
+    &quot;\n&quot;, 
+    &quot;Complete the basic data summary below. Use python, numpy and/or pandas methods to calculate the data summary rather than hard coding the results. For example, the [pandas shape method](http://pandas.pydata.org/pandas-docs/stable/generated/pandas.DataFrame.shape.html) might be useful for calculating some of the summary results. &quot; 
+   ] 
+  }, 
+  { 
+   &quot;cell_type&quot;: &quot;markdown&quot;, 
+   &quot;metadata&quot;: {}, 
+   &quot;source&quot;: [ 
+    &quot;### Provide a Basic Summary of the Data Set Using Python, Numpy and/or Pandas&quot; 
+   ] 
+  }, 
+  { 
+   &quot;cell_type&quot;: &quot;code&quot;, 
+   &quot;execution_count&quot;: 59, 
+   &quot;metadata&quot;: { 
+    &quot;collapsed&quot;: true 
+   }, 
+   &quot;outputs&quot;: [ 
+    { 
+     &quot;name&quot;: &quot;stdout&quot;, 
+     &quot;output_type&quot;: &quot;stream&quot;, 
+     &quot;text&quot;: [ 
+      &quot;Number of training examples = 34799\nNumber of testing examples = 12630\nImage data shape = (32, 32, 3)\nNumber of classes = 43\n&quot; 
+     ] 
+    } 
+   ], 
+   &quot;source&quot;: [ 
+    &quot;\n&quot;, 
+    &quot;### Replace each question mark with the appropriate value. \n&quot;, 
+    &quot;### Use python, pandas or numpy methods rather than hard coding the results\n&quot;, 
+    &quot;\n&quot;, 
+    &quot;# TODO: Number of training examples\n&quot;, 
+    &quot;n_train = X_train.shape[0]\n&quot;, 
+    &quot;\n&quot;, 
+    &quot;# TODO: Number of validation examples\n&quot;, 
+    &quot;n_validation = X_valid.shape[0]\n&quot;, 
+    &quot;\n&quot;, 
+    &quot;# TODO: Number of testing examples.\n&quot;, 
+    &quot;n_test = X_test.shape[0]\n&quot;, 
+    &quot;\n&quot;, 
+    &quot;# TODO: What's the shape of an traffic sign image?\n&quot;, 
+    &quot;image_shape = X_train.shape[1:]\n&quot;, 
+    &quot;\n&quot;, 
+    &quot;# TODO: How many unique classes/labels there are in the dataset.\n&quot;, 
+    &quot;classes_df = pd.read_csv('signnames.csv',delimiter=',')\n&quot;, 
+    &quot;n_classes = len(classes_df['ClassId'])\n&quot;, 
+    &quot;\n&quot;, 
+    &quot;print(\&quot;Number of training examples =\&quot;, n_train)\n&quot;, 
+    &quot;print(\&quot;Number of testing examples =\&quot;, n_test)\n&quot;, 
+    &quot;print(\&quot;Image data shape =\&quot;, image_shape)\n&quot;, 
+    &quot;print(\&quot;Number of classes =\&quot;, n_classes)\n&quot; 
+   ] 
+  }, 
+  { 
+   &quot;cell_type&quot;: &quot;code&quot;, 
+   &quot;execution_count&quot;: 60, 
+   &quot;metadata&quot;: { 
+    &quot;collapsed&quot;: true 
+   }, 
+   &quot;outputs&quot;: [], 
+   &quot;source&quot;: [ 
+    &quot;EPOCHS = 30\n&quot;, 
+    &quot;BATCH_SIZE = 64\n&quot; 
+   ] 
+  }, 
+  { 
+   &quot;cell_type&quot;: &quot;markdown&quot;, 
+   &quot;metadata&quot;: {}, 
+   &quot;source&quot;: [ 
+    &quot;### Include an exploratory visualization of the dataset&quot; 
+   ] 
+  }, 
+  { 
+   &quot;cell_type&quot;: &quot;markdown&quot;, 
+   &quot;metadata&quot;: {}, 
+   &quot;source&quot;: [ 
+    &quot;Visualize the German Traffic Signs Dataset using the pickled file(s). This is open ended, suggestions include: plotting traffic sign images, plotting the count of each sign, etc. \n&quot;, 
+    &quot;\n&quot;, 
+    &quot;The [Matplotlib](http://matplotlib.org/) [examples](http://matplotlib.org/examples/index.html) and [gallery](http://matplotlib.org/gallery.html) pages are a great resource for doing visualizations in Python.\n&quot;, 
+    &quot;\n&quot;, 
+    &quot;**NOTE:** It's recommended you start with something simple first. If you wish to do more, come back to it after you've completed the rest of the sections. It can be interesting to look at the distribution of classes in the training, validation and test set. Is the distribution the same? Are there more examples of some classes than others?&quot; 
+   ] 
+  }, 
+  { 
+   &quot;cell_type&quot;: &quot;code&quot;, 
+   &quot;execution_count&quot;: 121, 
+   &quot;metadata&quot;: { 
+    &quot;collapsed&quot;: true 
+   }, 
+   &quot;outputs&quot;: [ 
+    { 
+     &quot;name&quot;: &quot;stdout&quot;, 
+     &quot;output_type&quot;: &quot;stream&quot;, 
+     &quot;text&quot;: [ 
+      &quot;uint8\nLabel 10\n38\n&quot; 
+     ] 
+    }, 
+    { 
+     &quot;data&quot;: { 
+      &quot;text/plain&quot;: [ 
+       &quot;&lt;matplotlib.image.AxesImage at 0x227d0c61160&gt;&quot; 
+      ] 
+     }, 
+     &quot;execution_count&quot;: 121, 
+     &quot;metadata&quot;: {}, 
+     &quot;output_type&quot;: &quot;execute_result&quot; 
+    }, 
+    { 
+     &quot;data&quot;: { 
+      &quot;image/png&quot;: &quot;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\n&quot;, 
+      &quot;text/plain&quot;: [ 
+       &quot;&lt;Figure size 144x144 with 1 Axes&gt;&quot; 
+      ] 
+     }, 
+     &quot;metadata&quot;: {}, 
+     &quot;output_type&quot;: &quot;display_data&quot; 
+    } 
+   ], 
+   &quot;source&quot;: [ 
+    &quot;### Data exploration visualization code goes here.\n&quot;, 
+    &quot;### Feel free to use as many code cells as needed.\n&quot;, 
+    &quot;\n&quot;, 
+    &quot;# Visualizations will be shown in the notebook.\n&quot;, 
+    &quot;%matplotlib inline\n&quot;, 
+    &quot;index = random.randint(0,n_train)\n&quot;, 
+    &quot;image = X_train[index]\n&quot;, 
+    &quot;label = y_train[index]\n&quot;, 
+    &quot;\n&quot;, 
+    &quot;print(image[0].dtype)\n&quot;, 
+    &quot;print(\&quot;Label {0}\&quot;.format(label))\n&quot;, 
+    &quot;print(image[0,0,0])\n&quot;, 
+    &quot;plt.figure(figsize=(2,2))\n&quot;, 
+    &quot;plt.imshow(image, cmap='brg')\n&quot;, 
+    &quot;\n&quot;, 
+    &quot;# TODO: visualize a random image of each label as an example&quot; 
+   ] 
+  }, 
+  { 
+   &quot;cell_type&quot;: &quot;markdown&quot;, 
+   &quot;metadata&quot;: {}, 
+   &quot;source&quot;: [ 
+    &quot;----\n&quot;, 
+    &quot;\n&quot;, 
+    &quot;## Step 2: Design and Test a Model Architecture\n&quot;, 
+    &quot;\n&quot;, 
+    &quot;Design and implement a deep learning model that learns to recognize traffic signs. Train and test your model on the [German Traffic Sign Dataset](http://benchmark.ini.rub.de/?section=gtsrb&amp;subsection=dataset).\n&quot;, 
+    &quot;\n&quot;, 
+    &quot;The LeNet-5 implementation shown in the [classroom](https://classroom.udacity.com/nanodegrees/nd013/parts/fbf77062-5703-404e-b60c-95b78b2f3f9e/modules/6df7ae49-c61c-4bb2-a23e-6527e69209ec/lessons/601ae704-1035-4287-8b11-e2c2716217ad/concepts/d4aca031-508f-4e0b-b493-e7b706120f81) at the end of the CNN lesson is a solid starting point. You'll have to change the number of classes and possibly the preprocessing, but aside from that it's plug and play! \n&quot;, 
+    &quot;\n&quot;, 
+    &quot;With the LeNet-5 solution from the lecture, you should expect a validation set accuracy of about 0.89. To meet specifications, the validation set accuracy will need to be at least 0.93. It is possible to get an even higher accuracy, but 0.93 is the minimum for a successful project submission. \n&quot;, 
+    &quot;\n&quot;, 
+    &quot;There are various aspects to consider when thinking about this problem:\n&quot;, 
+    &quot;\n&quot;, 
+    &quot;- Neural network architecture (is the network over or underfitting?)\n&quot;, 
+    &quot;- Play around preprocessing techniques (normalization, rgb to grayscale, etc)\n&quot;, 
+    &quot;- Number of examples per label (some have more than others).\n&quot;, 
+    &quot;- Generate fake data.\n&quot;, 
+    &quot;\n&quot;, 
+    &quot;Here is an example of a [published baseline model on this problem](http://yann.lecun.com/exdb/publis/pdf/sermanet-ijcnn-11.pdf). It's not required to be familiar with the approach used in the paper but, it's good practice to try to read papers like these.&quot; 
+   ] 
+  }, 
+  { 
+   &quot;cell_type&quot;: &quot;markdown&quot;, 
+   &quot;metadata&quot;: {}, 
+   &quot;source&quot;: [ 
+    &quot;### Pre-process the Data Set (normalization, grayscale, etc.)&quot; 
+   ] 
+  }, 
+  { 
+   &quot;cell_type&quot;: &quot;markdown&quot;, 
+   &quot;metadata&quot;: {}, 
+   &quot;source&quot;: [ 
+    &quot;Minimally, the image data should be normalized so that the data has mean zero and equal variance. For image data, `(pixel - 128)/ 128` is a quick way to approximately normalize the data and can be used in this project. \n&quot;, 
+    &quot;\n&quot;, 
+    &quot;Other pre-processing steps are optional. You can try different techniques to see if it improves performance. \n&quot;, 
+    &quot;\n&quot;, 
+    &quot;Use the code cell (or multiple code cells, if necessary) to implement the first step of your project.&quot; 
+   ] 
+  }, 
+  { 
+   &quot;cell_type&quot;: &quot;code&quot;, 
+   &quot;execution_count&quot;: 62, 
+   &quot;metadata&quot;: { 
+    &quot;collapsed&quot;: true 
+   }, 
+   &quot;outputs&quot;: [], 
+   &quot;source&quot;: [ 
+    &quot;# Shuffle the training data to increase randomness\n&quot;, 
+    &quot;\n&quot;, 
+    &quot;X_train_shuffled, y_train_shuffled = shuffle(X_train, y_train)\n&quot; 
+   ] 
+  }, 
+  { 
+   &quot;cell_type&quot;: &quot;code&quot;, 
+   &quot;execution_count&quot;: 64, 
+   &quot;metadata&quot;: { 
+    &quot;collapsed&quot;: true 
+   }, 
+   &quot;outputs&quot;: [], 
+   &quot;source&quot;: [ 
+    &quot;\n&quot;, 
+    &quot;\n&quot;, 
+    &quot;def gray_scale(image):\n&quot;, 
+    &quot;    \&quot;\&quot;\&quot;\n&quot;, 
+    &quot;    Convert images to gray scale\n&quot;, 
+    &quot;    Wrapper of openCV function\n&quot;, 
+    &quot;    :param image: input image\n&quot;, 
+    &quot;    :return: converted gray scale image\n&quot;, 
+    &quot;    \&quot;\&quot;\&quot;\n&quot;, 
+    &quot;    return cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)\n&quot;, 
+    &quot;\n&quot;, 
+    &quot;# Convert images to gray scale because according to a paper by P. Sermanet and Y.Lecun, gray scale improve convnet accuracy\n&quot;, 
+    &quot;# todo: add paper reference\n&quot;, 
+    &quot;# todo: search for other optimizations\n&quot;, 
+    &quot;X_train_gray_scale = np.array(list(map(gray_scale, X_train_shuffled)))\n&quot; 
+   ] 
+  }, 
+  { 
+   &quot;cell_type&quot;: &quot;code&quot;, 
+   &quot;execution_count&quot;: 65, 
+   &quot;metadata&quot;: { 
+    &quot;collapsed&quot;: true 
+   }, 
+   &quot;outputs&quot;: [], 
+   &quot;source&quot;: [ 
+    &quot;from skimage.morphology import disk\n&quot;, 
+    &quot;from skimage.filters import rank\n&quot;, 
+    &quot;\n&quot;, 
+    &quot;\n&quot;, 
+    &quot;def local_histogram_equalization(image):\n&quot;, 
+    &quot;    selem = disk(30)\n&quot;, 
+    &quot;    img_eq = rank.equalize(image, selem=selem)\n&quot;, 
+    &quot;    return img_eq\n&quot;, 
+    &quot;    &quot; 
+   ] 
+  }, 
+  { 
+   &quot;cell_type&quot;: &quot;code&quot;, 
+   &quot;execution_count&quot;: 69, 
+   &quot;metadata&quot;: { 
+    &quot;collapsed&quot;: true 
+   }, 
+   &quot;outputs&quot;: [ 
+    { 
+     &quot;name&quot;: &quot;stdout&quot;, 
+     &quot;output_type&quot;: &quot;stream&quot;, 
+     &quot;text&quot;: [ 
+      &quot;image shape  (32, 32, 1)\n&quot; 
+     ] 
+    } 
+   ], 
+   &quot;source&quot;: [ 
+    &quot;### Preprocess the data here. It is required to normalize the data. Other preprocessing steps could include \n&quot;, 
+    &quot;### converting to grayscale, etc.\n&quot;, 
+    &quot;### Feel free to use as many code cells as needed.\n&quot;, 
+    &quot;import numpy as np\n&quot;, 
+    &quot;\n&quot;, 
+    &quot;def preprocess(X):\n&quot;, 
+    &quot;    \&quot;\&quot;\&quot;\n&quot;, 
+    &quot;    \n&quot;, 
+    &quot;    :param dataset: \n&quot;, 
+    &quot;    :return: \n&quot;, 
+    &quot;    \&quot;\&quot;\&quot;\n&quot;, 
+    &quot;    \n&quot;, 
+    &quot;    X_gray_scale = np.array(list(map(gray_scale, X)))\n&quot;, 
+    &quot;    X_local_equalized = np.array(list(map(local_histogram_equalization, X_gray_scale)))\n&quot;, 
+    &quot;    # X_normalized = np.array(list(map(lambda x: np.divide(np.subtract(x,128),256), X_local_equalized)))\n&quot;, 
+    &quot;    # TODO(qingyouz): I really don't know why the math is like this. I changed the range from [-1,1] to [0,1]. \n&quot;, 
+    &quot;    # # The accuracy increased from 0.8 to 0.95 .....\n&quot;, 
+    &quot;    X_normalized = np.divide(X_local_equalized, 256)\n&quot;, 
+    &quot;    # Change the shape back to (32,32,1) instead of (32,32)\n&quot;, 
+    &quot;    X_reshaped = np.array(list(map(lambda x: np.reshape(x, list(x.shape)+[1]), X_normalized)))\n&quot;, 
+    &quot;    \n&quot;, 
+    &quot;    return X_reshaped \n&quot;, 
+    &quot;\n&quot;, 
+    &quot;# Read the data again so we only run this cell for data processing\n&quot;, 
+    &quot;X_train, y_train = train['features'], train['labels']\n&quot;, 
+    &quot;X_valid, y_valid = valid['features'], valid['labels']\n&quot;, 
+    &quot;X_test, y_test = test['features'], test['labels']\n&quot;, 
+    &quot;\n&quot;, 
+    &quot;X_train_processed = preprocess(X_train)\n&quot;, 
+    &quot;X_valid_processed = preprocess(X_valid)\n&quot;, 
+    &quot;X_test_processed= preprocess(X_test)\n&quot;, 
+    &quot;image_shape = X_train_processed[0].shape\n&quot;, 
+    &quot;print(\&quot;image shape \&quot;, image_shape)\n&quot; 
+   ] 
+  }, 
+  { 
+   &quot;cell_type&quot;: &quot;code&quot;, 
+   &quot;execution_count&quot;: 14, 
+   &quot;metadata&quot;: { 
+    &quot;collapsed&quot;: true 
+   }, 
+   &quot;outputs&quot;: [], 
+   &quot;source&quot;: [ 
+    &quot;\n&quot; 
+   ] 
+  }, 
+  { 
+   &quot;cell_type&quot;: &quot;markdown&quot;, 
+   &quot;metadata&quot;: {}, 
+   &quot;source&quot;: [ 
+    &quot;### Model Architecture&quot; 
+   ] 
+  }, 
+  { 
+   &quot;cell_type&quot;: &quot;code&quot;, 
+   &quot;execution_count&quot;: null, 
+   &quot;metadata&quot;: { 
+    &quot;collapsed&quot;: true 
+   }, 
+   &quot;outputs&quot;: [], 
+   &quot;source&quot;: [ 
+    &quot;### Define your architecture here.\n&quot;, 
+    &quot;### Feel free to use as many code cells as needed.\n&quot;, 
+    &quot;\n&quot; 
+   ] 
+  }, 
+  { 
+   &quot;cell_type&quot;: &quot;code&quot;, 
+   &quot;execution_count&quot;: 76, 
+   &quot;metadata&quot;: { 
+    &quot;collapsed&quot;: true 
+   }, 
+   &quot;outputs&quot;: [], 
+   &quot;source&quot;: [ 
+    &quot;\n&quot;, 
+    &quot;def LeNet(x, output_classes=43):\n&quot;, 
+    &quot;    # Arguments used for tf.truncated_normal, randomly defines variables for the weights and biases for each layer\n&quot;, 
+    &quot;    mu = 0\n&quot;, 
+    &quot;    sigma = 0.1\n&quot;, 
+    &quot;    log_shapes = True\n&quot;, 
+    &quot;    \n&quot;, 
+    &quot;    # TODO: Layer 1: Convolutional. Input = 32x32x1. Output = 28x28x6.\n&quot;, 
+    &quot;    # To achieve this, we will need a convolution filter of size 5x5x1x6. A size 1 striding and VALID padding\n&quot;, 
+    &quot;    filter_shape = [5,5,x.shape[3].value,6]\n&quot;, 
+    &quot;    filter_kernel = tf.Variable(tf.truncated_normal(filter_shape, mu, sigma))\n&quot;, 
+    &quot;    strides = [1,1,1,1]\n&quot;, 
+    &quot;    padding = 'VALID'\n&quot;, 
+    &quot;    conv1_bias = tf.Variable(tf.zeros(filter_shape[3]))\n&quot;, 
+    &quot;    conv1 = tf.nn.conv2d(x,filter_kernel, strides, padding) + conv1_bias\n&quot;, 
+    &quot;    if log_shapes:\n&quot;, 
+    &quot;        print(\&quot;conv1: {0}\&quot;.format(conv1))\n&quot;, 
+    &quot;    # TODO: Activation.\n&quot;, 
+    &quot;    conv1_activated = tf.nn.relu(conv1)\n&quot;, 
+    &quot;    if log_shapes:\n&quot;, 
+    &quot;        print(\&quot;conv1_activated: {0}\&quot;.format(conv1_activated))\n&quot;, 
+    &quot;\n&quot;, 
+    &quot;    # TODO: Pooling. Input = 28x28x6. Output = 14x14x6.\n&quot;, 
+    &quot;    ksize = [1,2,2,1]\n&quot;, 
+    &quot;    strides = [1,2,2,1]\n&quot;, 
+    &quot;    padding = 'VALID'\n&quot;, 
+    &quot;    conv1_pooled = tf.nn.max_pool(conv1_activated,ksize,strides,padding)\n&quot;, 
+    &quot;    if log_shapes:\n&quot;, 
+    &quot;        print(\&quot;conv1_pooled: {0}\&quot;.format(conv1_pooled))\n&quot;, 
+    &quot;\n&quot;, 
+    &quot;    # TODO: Layer 2: Convolutional. Output = 10x10x16.\n&quot;, 
+    &quot;    # From 14x14x6 to 10x10x16, we need 5x5x6x16 filter. size 1 striding and VALID padding\n&quot;, 
+    &quot;    filter_shape = [5,5,6,16]\n&quot;, 
+    &quot;    filter_kernel = tf.Variable(tf.truncated_normal(filter_shape,mu,sigma))\n&quot;, 
+    &quot;    strides = [1,1,1,1]\n&quot;, 
+    &quot;    padding = 'VALID'\n&quot;, 
+    &quot;    conv2_bias =  tf.Variable(tf.zeros(filter_shape[3]))\n&quot;, 
+    &quot;    conv2 = tf.nn.conv2d(conv1_pooled,filter_kernel,strides, padding) + conv2_bias\n&quot;, 
+    &quot;    if log_shapes:\n&quot;, 
+    &quot;        print(\&quot;conv2: {0}\&quot;.format(conv2))\n&quot;, 
+    &quot;    \n&quot;, 
+    &quot;    # TODO: Activation.\n&quot;, 
+    &quot;    conv2_activated = tf.nn.relu(conv2)\n&quot;, 
+    &quot;\n&quot;, 
+    &quot;    # TODO: Pooling. Input = 10x10x16. Output = 5x5x16.\n&quot;, 
+    &quot;    # yet another max pooling with 2\n&quot;, 
+    &quot;    ksize = [1,2,2,1]\n&quot;, 
+    &quot;    strides = [1,2,2,1]\n&quot;, 
+    &quot;    padding = 'VALID'\n&quot;, 
+    &quot;    conv2_pooled = tf.nn.max_pool(conv2_activated, ksize, strides, padding)\n&quot;, 
+    &quot;    if log_shapes:\n&quot;, 
+    &quot;        print(\&quot;conv2_pooled: {0}\&quot;.format(conv2_pooled))\n&quot;, 
+    &quot;    # TODO: Flatten. Input = 5x5x16. Output = 400.\n&quot;, 
+    &quot;    flattened = tf.contrib.layers.flatten(conv2_pooled)\n&quot;, 
+    &quot;    if log_shapes:\n&quot;, 
+    &quot;        print(\&quot;flattened: {0}\&quot;.format(flattened)) \n&quot;, 
+    &quot;    \n&quot;, 
+    &quot;    # TODO: Layer 3: Fully Connected. Input = 400. Output = 120.\n&quot;, 
+    &quot;    num_outputs =120\n&quot;, 
+    &quot;    fully_connected_weights = tf.Variable(tf.truncated_normal((400, 120), mean=mu,stddev=sigma))\n&quot;, 
+    &quot;    fully_connected_bias  = tf.zeros([num_outputs])\n&quot;, 
+    &quot;    (flattened,fully_connected_weights)\n&quot;, 
+    &quot;    fully_connected = tf.contrib.layers.fully_connected(flattened, num_outputs, activation_fn=tf.nn.relu)\n&quot;, 
+    &quot;    if log_shapes:\n&quot;, 
+    &quot;        print(\&quot;fully_connected: {0}\&quot;.format(fully_connected)) \n&quot;, 
+    &quot;    \n&quot;, 
+    &quot;    # TODO: Activation.\n&quot;, 
+    &quot;    # Ideally we can use the default activation fn in fully_connected, buet let's be explicit here\n&quot;, 
+    &quot;    fully_connected_activated = tf.nn.relu(fully_connected)\n&quot;, 
+    &quot;    if log_shapes:\n&quot;, 
+    &quot;        print(\&quot;fully_connected_activated: {0}\&quot;.format(fully_connected_activated)) \n&quot;, 
+    &quot;    \n&quot;, 
+    &quot;\n&quot;, 
+    &quot;    # TODO: Layer 4: Fully Connected. Input = 120. Output = 84.\n&quot;, 
+    &quot;    num_outputs = 84\n&quot;, 
+    &quot;    fully_connected_4_weights = tf.Variable(tf.truncated_normal((120,84),mean=mu, stddev=sigma))\n&quot;, 
+    &quot;    tf.matmul(fully_connected_activated,fully_connected_4_weights)\n&quot;, 
+    &quot;    fully_connected_4 = tf.contrib.layers.fully_connected(fully_connected, num_outputs, activation_fn=tf.nn.relu)\n&quot;, 
+    &quot;    if log_shapes:\n&quot;, 
+    &quot;        print(\&quot;fully_connected_4: {0}\&quot;.format(fully_connected_4)) \n&quot;, 
+    &quot;    \n&quot;, 
+    &quot;    # TODO: Activation.\n&quot;, 
+    &quot;    fully_connected_4_activated = tf.nn.relu(fully_connected_4)\n&quot;, 
+    &quot;\n&quot;, 
+    &quot;    # TODO: Layer 5: Fully Connected. Input = 84. Output = 10.\n&quot;, 
+    &quot;    num_outputs = output_classes\n&quot;, 
+    &quot;    fully_connected_5_weights = tf.Variable(tf.truncated_normal((84,output_classes),mean=mu,stddev=sigma))\n&quot;, 
+    &quot;    tf.matmul(fully_connected_4_activated, fully_connected_5_weights)\n&quot;, 
+    &quot;    fully_connected_5 = tf.contrib.layers.fully_connected(fully_connected_4, num_outputs, activation_fn=None)\n&quot;, 
+    &quot;    if log_shapes:\n&quot;, 
+    &quot;        print(\&quot;fully_connected_5: {0}\&quot;.format(fully_connected_5)) \n&quot;, 
+    &quot;    \n&quot;, 
+    &quot;    logits = fully_connected_5\n&quot;, 
+    &quot;    \n&quot;, 
+    &quot;    return logits\n&quot; 
+   ] 
+  }, 
+  { 
+   &quot;cell_type&quot;: &quot;markdown&quot;, 
+   &quot;metadata&quot;: {}, 
+   &quot;source&quot;: [ 
+    &quot;### Train, Validate and Test the Model&quot; 
+   ] 
+  }, 
+  { 
+   &quot;cell_type&quot;: &quot;markdown&quot;, 
+   &quot;metadata&quot;: {}, 
+   &quot;source&quot;: [ 
+    &quot;A validation set can be used to assess how well the model is performing. A low accuracy on the training and validation\n&quot;, 
+    &quot;sets imply underfitting. A high accuracy on the training set but low accuracy on the validation set implies overfitting.&quot; 
+   ] 
+  }, 
+  { 
+   &quot;cell_type&quot;: &quot;code&quot;, 
+   &quot;execution_count&quot;: 77, 
+   &quot;metadata&quot;: { 
+    &quot;collapsed&quot;: false 
+   }, 
+   &quot;outputs&quot;: [], 
+   &quot;source&quot;: [ 
+    &quot;\n&quot;, 
+    &quot;### Train your model here.\n&quot;, 
+    &quot;### Calculate and report the accuracy on the training and validation set.\n&quot;, 
+    &quot;### Once a final model architecture is selected, \n&quot;, 
+    &quot;### the accuracy on the test set should be calculated and reported as well.\n&quot;, 
+    &quot;### Feel free to use as many code cells as needed.\n&quot;, 
+    &quot;x = tf.placeholder(tf.float32, [None] + list(image_shape))\n&quot;, 
+    &quot;y = tf.placeholder(tf.int32, (None))\n&quot;, 
+    &quot;one_hot_y = tf.one_hot(y, n_classes)\n&quot; 
+   ] 
+  }, 
+  { 
+   &quot;cell_type&quot;: &quot;code&quot;, 
+   &quot;execution_count&quot;: 78, 
+   &quot;metadata&quot;: { 
+    &quot;collapsed&quot;: false 
+   }, 
+   &quot;outputs&quot;: [ 
+    { 
+     &quot;name&quot;: &quot;stdout&quot;, 
+     &quot;output_type&quot;: &quot;stream&quot;, 
+     &quot;text&quot;: [ 
+      &quot;Tensor(\&quot;Placeholder_4:0\&quot;, shape=(?, 32, 32, 1), dtype=float32)\nTensor(\&quot;Placeholder_5:0\&quot;, dtype=int32)\n&quot; 
+     ] 
+    } 
+   ], 
+   &quot;source&quot;: [ 
+    &quot;\n&quot;, 
+    &quot;print(x)\n&quot;, 
+    &quot;print(y)&quot; 
+   ] 
+  }, 
+  { 
+   &quot;cell_type&quot;: &quot;markdown&quot;, 
+   &quot;metadata&quot;: { 
+    &quot;collapsed&quot;: false 
+   }, 
+   &quot;source&quot;: [ 
+    &quot;## Training Pipeline\n&quot; 
+   ] 
+  }, 
+  { 
+   &quot;cell_type&quot;: &quot;code&quot;, 
+   &quot;execution_count&quot;: 79, 
+   &quot;metadata&quot;: { 
+    &quot;collapsed&quot;: true 
+   }, 
+   &quot;outputs&quot;: [ 
+    { 
+     &quot;name&quot;: &quot;stdout&quot;, 
+     &quot;output_type&quot;: &quot;stream&quot;, 
+     &quot;text&quot;: [ 
+      &quot;conv1: Tensor(\&quot;add:0\&quot;, shape=(?, 28, 28, 6), dtype=float32)\nconv1_activated: Tensor(\&quot;Relu:0\&quot;, shape=(?, 28, 28, 6), dtype=float32)\nconv1_pooled: Tensor(\&quot;MaxPool:0\&quot;, shape=(?, 14, 14, 6), dtype=float32)\nconv2: Tensor(\&quot;add_1:0\&quot;, shape=(?, 10, 10, 16), dtype=float32)\nconv2_pooled: Tensor(\&quot;MaxPool_1:0\&quot;, shape=(?, 5, 5, 16), dtype=float32)\nflattened: Tensor(\&quot;Flatten/flatten/Reshape:0\&quot;, shape=(?, 400), dtype=float32)\nfully_connected: Tensor(\&quot;fully_connected/Relu:0\&quot;, shape=(?, 120), dtype=float32)\nfully_connected_activated: Tensor(\&quot;Relu_2:0\&quot;, shape=(?, 120), dtype=float32)\nfully_connected_4: Tensor(\&quot;fully_connected_1/Relu:0\&quot;, shape=(?, 84), dtype=float32)\nfully_connected_5: Tensor(\&quot;fully_connected_2/BiasAdd:0\&quot;, shape=(?, 43), dtype=float32)\n&quot; 
+     ] 
+    } 
+   ], 
+   &quot;source&quot;: [ 
+    &quot;# Training \n&quot;, 
+    &quot;rate = 0.001\n&quot;, 
+    &quot;logits = LeNet(x, output_classes=n_classes)\n&quot;, 
+    &quot;cross_entropy = tf.nn.softmax_cross_entropy_with_logits_v2(labels=one_hot_y, logits=logits)\n&quot;, 
+    &quot;loss_operation = tf.reduce_mean(cross_entropy)\n&quot;, 
+    &quot;optimizer = tf.train.AdamOptimizer(learning_rate=rate)\n&quot;, 
+    &quot;training_operation = optimizer.minimize(loss_operation)\n&quot; 
+   ] 
+  }, 
+  { 
+   &quot;cell_type&quot;: &quot;markdown&quot;, 
+   &quot;metadata&quot;: { 
+    &quot;collapsed&quot;: false 
+   }, 
+   &quot;source&quot;: [ 
+    &quot;## Model Evaluation&quot; 
+   ] 
+  }, 
+  { 
+   &quot;cell_type&quot;: &quot;code&quot;, 
+   &quot;execution_count&quot;: 80, 
+   &quot;metadata&quot;: { 
+    &quot;collapsed&quot;: true 
+   }, 
+   &quot;outputs&quot;: [], 
+   &quot;source&quot;: [ 
+    &quot;prediction = tf.argmax(logits, 1)\n&quot;, 
+    &quot;correct_prediction = tf.equal(tf.argmax(logits, 1), tf.argmax(one_hot_y, 1))\n&quot;, 
+    &quot;accuracy_operation = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))\n&quot;, 
+    &quot;saver = tf.train.Saver()\n&quot; 
+   ] 
+  }, 
+  { 
+   &quot;cell_type&quot;: &quot;code&quot;, 
+   &quot;execution_count&quot;: 81, 
+   &quot;metadata&quot;: { 
+    &quot;collapsed&quot;: true 
+   }, 
+   &quot;outputs&quot;: [], 
+   &quot;source&quot;: [ 
+    &quot;\n&quot;, 
+    &quot;def evaluate(X_data, y_data, batch_size):\n&quot;, 
+    &quot;    num_examples = len(X_data)\n&quot;, 
+    &quot;    total_accuracy = 0\n&quot;, 
+    &quot;    sess = tf.get_default_session()\n&quot;, 
+    &quot;    for offset in range(0, num_examples, batch_size):\n&quot;, 
+    &quot;        batch_x, batch_y = X_data[offset:offset+batch_size], y_data[offset:offset+batch_size]\n&quot;, 
+    &quot;        accuracy = sess.run(accuracy_operation, feed_dict={x: batch_x, y: batch_y,keep_prob:1.0, keep_prob_conv:1.0})\n&quot;, 
+    &quot;        total_accuracy += (accuracy * len(batch_x))\n&quot;, 
+    &quot;    return total_accuracy / num_examples\n&quot; 
+   ] 
+  }, 
+  { 
+   &quot;cell_type&quot;: &quot;markdown&quot;, 
+   &quot;metadata&quot;: { 
+    &quot;collapsed&quot;: false 
+   }, 
+   &quot;source&quot;: [ 
+    &quot;## Train the Model&quot; 
+   ] 
+  }, 
+  { 
+   &quot;cell_type&quot;: &quot;code&quot;, 
+   &quot;execution_count&quot;: 82, 
+   &quot;metadata&quot;: { 
+    &quot;collapsed&quot;: true 
+   }, 
+   &quot;outputs&quot;: [], 
+   &quot;source&quot;: [ 
+    &quot;\n&quot;, 
+    &quot;keep_prob = tf.placeholder(tf.float32)       # For fully-connected layers\n&quot;, 
+    &quot;keep_prob_conv = tf.placeholder(tf.float32)  # For convolutional layers&quot; 
+   ] 
+  }, 
+  { 
+   &quot;cell_type&quot;: &quot;code&quot;, 
+   &quot;execution_count&quot;: 83, 
+   &quot;metadata&quot;: { 
+    &quot;collapsed&quot;: true 
+   }, 
+   &quot;outputs&quot;: [ 
+    { 
+     &quot;name&quot;: &quot;stdout&quot;, 
+     &quot;output_type&quot;: &quot;stream&quot;, 
+     &quot;text&quot;: [ 
+      &quot;Training...\n\n&quot; 
+     ] 
+    }, 
+    { 
+     &quot;name&quot;: &quot;stdout&quot;, 
+     &quot;output_type&quot;: &quot;stream&quot;, 
+     &quot;text&quot;: [ 
+      &quot;EPOCH 1 ...\nValidation Accuracy = 0.773\n\n&quot; 
+     ] 
+    }, 
+    { 
+     &quot;name&quot;: &quot;stdout&quot;, 
+     &quot;output_type&quot;: &quot;stream&quot;, 
+     &quot;text&quot;: [ 
+      &quot;EPOCH 2 ...\nValidation Accuracy = 0.868\n\n&quot; 
+     ] 
+    }, 
+    { 
+     &quot;name&quot;: &quot;stdout&quot;, 
+     &quot;output_type&quot;: &quot;stream&quot;, 
+     &quot;text&quot;: [ 
+      &quot;EPOCH 3 ...\nValidation Accuracy = 0.881\n\n&quot; 
+     ] 
+    }, 
+    { 
+     &quot;name&quot;: &quot;stdout&quot;, 
+     &quot;output_type&quot;: &quot;stream&quot;, 
+     &quot;text&quot;: [ 
+      &quot;EPOCH 4 ...\nValidation Accuracy = 0.899\n\n&quot; 
+     ] 
+    }, 
+    { 
+     &quot;name&quot;: &quot;stdout&quot;, 
+     &quot;output_type&quot;: &quot;stream&quot;, 
+     &quot;text&quot;: [ 
+      &quot;EPOCH 5 ...\nValidation Accuracy = 0.913\n\n&quot; 
+     ] 
+    }, 
+    { 
+     &quot;name&quot;: &quot;stdout&quot;, 
+     &quot;output_type&quot;: &quot;stream&quot;, 
+     &quot;text&quot;: [ 
+      &quot;EPOCH 6 ...\nValidation Accuracy = 0.903\n\n&quot; 
+     ] 
+    }, 
+    { 
+     &quot;name&quot;: &quot;stdout&quot;, 
+     &quot;output_type&quot;: &quot;stream&quot;, 
+     &quot;text&quot;: [ 
+      &quot;EPOCH 7 ...\nValidation Accuracy = 0.910\n\n&quot; 
+     ] 
+    }, 
+    { 
+     &quot;name&quot;: &quot;stdout&quot;, 
+     &quot;output_type&quot;: &quot;stream&quot;, 
+     &quot;text&quot;: [ 
+      &quot;EPOCH 8 ...\nValidation Accuracy = 0.889\n\n&quot; 
+     ] 
+    }, 
+    { 
+     &quot;name&quot;: &quot;stdout&quot;, 
+     &quot;output_type&quot;: &quot;stream&quot;, 
+     &quot;text&quot;: [ 
+      &quot;EPOCH 9 ...\nValidation Accuracy = 0.915\n\n&quot; 
+     ] 
+    }, 
+    { 
+     &quot;name&quot;: &quot;stdout&quot;, 
+     &quot;output_type&quot;: &quot;stream&quot;, 
+     &quot;text&quot;: [ 
+      &quot;EPOCH 10 ...\nValidation Accuracy = 0.925\n\n&quot; 
+     ] 
+    }, 
+    { 
+     &quot;name&quot;: &quot;stdout&quot;, 
+     &quot;output_type&quot;: &quot;stream&quot;, 
+     &quot;text&quot;: [ 
+      &quot;EPOCH 11 ...\nValidation Accuracy = 0.916\n\n&quot; 
+     ] 
+    }, 
+    { 
+     &quot;name&quot;: &quot;stdout&quot;, 
+     &quot;output_type&quot;: &quot;stream&quot;, 
+     &quot;text&quot;: [ 
+      &quot;EPOCH 12 ...\nValidation Accuracy = 0.934\n\n&quot; 
+     ] 
+    }, 
+    { 
+     &quot;name&quot;: &quot;stdout&quot;, 
+     &quot;output_type&quot;: &quot;stream&quot;, 
+     &quot;text&quot;: [ 
+      &quot;EPOCH 13 ...\nValidation Accuracy = 0.924\n\n&quot; 
+     ] 
+    }, 
+    { 
+     &quot;name&quot;: &quot;stdout&quot;, 
+     &quot;output_type&quot;: &quot;stream&quot;, 
+     &quot;text&quot;: [ 
+      &quot;EPOCH 14 ...\nValidation Accuracy = 0.920\n\n&quot; 
+     ] 
+    }, 
+    { 
+     &quot;name&quot;: &quot;stdout&quot;, 
+     &quot;output_type&quot;: &quot;stream&quot;, 
+     &quot;text&quot;: [ 
+      &quot;EPOCH 15 ...\nValidation Accuracy = 0.919\n\n&quot; 
+     ] 
+    }, 
+    { 
+     &quot;name&quot;: &quot;stdout&quot;, 
+     &quot;output_type&quot;: &quot;stream&quot;, 
+     &quot;text&quot;: [ 
+      &quot;EPOCH 16 ...\nValidation Accuracy = 0.920\n\n&quot; 
+     ] 
+    }, 
+    { 
+     &quot;name&quot;: &quot;stdout&quot;, 
+     &quot;output_type&quot;: &quot;stream&quot;, 
+     &quot;text&quot;: [ 
+      &quot;EPOCH 17 ...\nValidation Accuracy = 0.922\n\n&quot; 
+     ] 
+    }, 
+    { 
+     &quot;name&quot;: &quot;stdout&quot;, 
+     &quot;output_type&quot;: &quot;stream&quot;, 
+     &quot;text&quot;: [ 
+      &quot;EPOCH 18 ...\nValidation Accuracy = 0.923\n\n&quot; 
+     ] 
+    }, 
+    { 
+     &quot;name&quot;: &quot;stdout&quot;, 
+     &quot;output_type&quot;: &quot;stream&quot;, 
+     &quot;text&quot;: [ 
+      &quot;EPOCH 19 ...\nValidation Accuracy = 0.937\n\n&quot; 
+     ] 
+    }, 
+    { 
+     &quot;name&quot;: &quot;stdout&quot;, 
+     &quot;output_type&quot;: &quot;stream&quot;, 
+     &quot;text&quot;: [ 
+      &quot;EPOCH 20 ...\nValidation Accuracy = 0.924\n\n&quot; 
+     ] 
+    }, 
+    { 
+     &quot;name&quot;: &quot;stdout&quot;, 
+     &quot;output_type&quot;: &quot;stream&quot;, 
+     &quot;text&quot;: [ 
+      &quot;EPOCH 21 ...\nValidation Accuracy = 0.914\n\n&quot; 
+     ] 
+    }, 
+    { 
+     &quot;name&quot;: &quot;stdout&quot;, 
+     &quot;output_type&quot;: &quot;stream&quot;, 
+     &quot;text&quot;: [ 
+      &quot;EPOCH 22 ...\nValidation Accuracy = 0.937\n\n&quot; 
+     ] 
+    }, 
+    { 
+     &quot;name&quot;: &quot;stdout&quot;, 
+     &quot;output_type&quot;: &quot;stream&quot;, 
+     &quot;text&quot;: [ 
+      &quot;EPOCH 23 ...\nValidation Accuracy = 0.940\n\n&quot; 
+     ] 
+    }, 
+    { 
+     &quot;name&quot;: &quot;stdout&quot;, 
+     &quot;output_type&quot;: &quot;stream&quot;, 
+     &quot;text&quot;: [ 
+      &quot;EPOCH 24 ...\nValidation Accuracy = 0.929\n\n&quot; 
+     ] 
+    }, 
+    { 
+     &quot;name&quot;: &quot;stdout&quot;, 
+     &quot;output_type&quot;: &quot;stream&quot;, 
+     &quot;text&quot;: [ 
+      &quot;EPOCH 25 ...\nValidation Accuracy = 0.937\n\n&quot; 
+     ] 
+    }, 
+    { 
+     &quot;name&quot;: &quot;stdout&quot;, 
+     &quot;output_type&quot;: &quot;stream&quot;, 
+     &quot;text&quot;: [ 
+      &quot;EPOCH 26 ...\nValidation Accuracy = 0.938\n\n&quot; 
+     ] 
+    }, 
+    { 
+     &quot;name&quot;: &quot;stdout&quot;, 
+     &quot;output_type&quot;: &quot;stream&quot;, 
+     &quot;text&quot;: [ 
+      &quot;EPOCH 27 ...\nValidation Accuracy = 0.939\n\n&quot; 
+     ] 
+    }, 
+    { 
+     &quot;name&quot;: &quot;stdout&quot;, 
+     &quot;output_type&quot;: &quot;stream&quot;, 
+     &quot;text&quot;: [ 
+      &quot;EPOCH 28 ...\nValidation Accuracy = 0.935\n\n&quot; 
+     ] 
+    }, 
+    { 
+     &quot;name&quot;: &quot;stdout&quot;, 
+     &quot;output_type&quot;: &quot;stream&quot;, 
+     &quot;text&quot;: [ 
+      &quot;EPOCH 29 ...\nValidation Accuracy = 0.940\n\n&quot; 
+     ] 
+    }, 
+    { 
+     &quot;name&quot;: &quot;stdout&quot;, 
+     &quot;output_type&quot;: &quot;stream&quot;, 
+     &quot;text&quot;: [ 
+      &quot;EPOCH 30 ...\nValidation Accuracy = 0.933\n\nModel saved\n&quot; 
+     ] 
+    } 
+   ], 
+   &quot;source&quot;: [ 
+    &quot;with tf.Session() as sess:\n&quot;, 
+    &quot;    sess.run(tf.global_variables_initializer())\n&quot;, 
+    &quot;    num_examples = len(X_train)\n&quot;, 
+    &quot;    \n&quot;, 
+    &quot;    print(\&quot;Training...\&quot;)\n&quot;, 
+    &quot;    # Note Needed to downgrade cuDnn to 7.0.5 CUDA 9.0 to be compatible with tensorflow \n&quot;, 
+    &quot;    print()\n&quot;, 
+    &quot;    for i in range(EPOCHS):\n&quot;, 
+    &quot;        X_train_processed, y_train = shuffle(X_train_processed, y_train)\n&quot;, 
+    &quot;        for offset in range(0, num_examples, BATCH_SIZE):\n&quot;, 
+    &quot;            end = offset + BATCH_SIZE\n&quot;, 
+    &quot;            batch_x, batch_y = X_train_processed[offset:end], y_train[offset:end]\n&quot;, 
+    &quot;            sess.run(training_operation, feed_dict={x: batch_x, y: batch_y, keep_prob:0.5, keep_prob_conv:0.7})\n&quot;, 
+    &quot;            \n&quot;, 
+    &quot;        validation_accuracy = evaluate(X_valid_processed, y_valid, BATCH_SIZE)\n&quot;, 
+    &quot;        print(\&quot;EPOCH {} ...\&quot;.format(i+1))\n&quot;, 
+    &quot;        print(\&quot;Validation Accuracy = {:.3f}\&quot;.format(validation_accuracy))\n&quot;, 
+    &quot;        print()\n&quot;, 
+    &quot;        \n&quot;, 
+    &quot;    saver.save(sess, './lenet')\n&quot;, 
+    &quot;    print(\&quot;Model saved\&quot;)\n&quot; 
+   ] 
+  }, 
+  { 
+   &quot;cell_type&quot;: &quot;markdown&quot;, 
+   &quot;metadata&quot;: {}, 
+   &quot;source&quot;: [ 
+    &quot;---\n&quot;, 
+    &quot;\n&quot;, 
+    &quot;## Step 3: Test a Model on New Images\n&quot;, 
+    &quot;\n&quot;, 
+    &quot;To give yourself more insight into how your model is working, download at least five pictures of German traffic signs from the web and use your model to predict the traffic sign type.\n&quot;, 
+    &quot;\n&quot;, 
+    &quot;You may find `signnames.csv` useful as it contains mappings from the class id (integer) to the actual sign name.&quot; 
+   ] 
+  }, 
+  { 
+   &quot;cell_type&quot;: &quot;markdown&quot;, 
+   &quot;metadata&quot;: {}, 
+   &quot;source&quot;: [ 
+    &quot;### Load and Output the Images&quot; 
+   ] 
+  }, 
+  { 
+   &quot;cell_type&quot;: &quot;code&quot;, 
+   &quot;execution_count&quot;: 133, 
+   &quot;metadata&quot;: { 
+    &quot;collapsed&quot;: true 
+   }, 
+   &quot;outputs&quot;: [ 
+    { 
+     &quot;name&quot;: &quot;stdout&quot;, 
+     &quot;output_type&quot;: &quot;stream&quot;, 
+     &quot;text&quot;: [ 
+      &quot;    Filename  Width  Height  Roi.X1  Roi.Y1  Roi.X2  Roi.Y2  ClassId\n0  00000.ppm     53      54       6       5      48      49       16\n1  00001.ppm     42      45       5       5      36      40        1\n2  00002.ppm     48      52       6       6      43      47       38\n3  00003.ppm     27      29       5       5      22      24       33\n4  00004.ppm     60      57       5       5      55      52       11\n[54, 53, 3]\n170\n62\n56\n94\n41\n&quot; 
+     ] 
+    }, 
+    { 
+     &quot;data&quot;: { 
+      &quot;image/png&quot;: &quot;iVBORw0KGgoAAAANSUhEUgAAAIMAAAJPCAYAAABfKGeAAAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAALEgAACxIB0t1+/AAAADl0RVh0U29mdHdhcmUAbWF0cGxvdGxpYiB2ZXJzaW9uIDMuMC4wLCBodHRwOi8vbWF0cGxvdGxpYi5vcmcvqOYd8AAAIABJREFUeJzsvXmUnVd1J/rbd655nqTSLFmWPMgmxpipmxA7GEMadxN4sQmd9UI3SR50IJCBkHSek0USJ7CSdL9FOo9u/DAPGnAakgdmDpNNYkDGsyxrnkoq1Tzcqlu37rTfH+er77evuFd1q8q6UonzW0tLu879hvPde769z55FVeHhAQCRyz0BjysHfjF4hPCLwSOEXwweIfxi8AjhF4NHiKtuMYjIfSLyqct0760ioiISuxz3XyvW5WIQkXtF5HERmRORYRH5qoi8qk73Pikit6/y3HcH814UkU9U+LxRRP5WRMZFZEZEHlnzhFeAdbeCReR9AD4A4NcBfB1ADsCdAN4E4PuXcWq14ByADwF4HYCGCp9/DO432QNgEsBN9ZsaAFVdN/8AtAGYA/CWixxzH4BPmb//HsB5ADMAHgFwnfnsLgDPA0gDOAvgt4PxbgAPA5iG+1EeBRAJPjsJ4PaAjgL4CIBxAMcBvAuAAogt8xwfAvCJC8Z2A5gF0Hq5vt/1JiZeDiAF4B9WcM5XAewC0AvgCQCfNp99HMCvqWoLgOsBfDsYfz+AIQA9APoAfBDuR74Q/xHAGwHcDOAWAL+4gnldiJcBOAXgjwMx8ayIvHkN11sx1tti6AIwrqqFWk9Q1QdUNa2qi3BcY5+ItAUf5wHsFZFWVZ1S1SfM+ACALaqaV9VHtbIT560A/kZVz6jqJIA/X+2DARiEW5AzADYAeDeAB0VkzxquuSKst8UwAaC71t26iERF5H4ROSYis3AsHnBiAADeDCcqTonI90Tk5cH4hwEcBfANETkuIh+ocosNAM6Yv0+t4FkuxALcIvyQquZU9XsAvgPg59dwzRVhvS2GxwBkAdxd4/H3wm0sb4fbb2wNxgUAVHW/qr4JToT8I4CHgvG0qr5fVbcD+AUA7xORn6tw/WEAm8zfm1f0NOV4Zg3nvihYV4tBVWcA/BGAj4rI3YEqFheR14vIX1Y4pQXAIhxHaQTwZ0sfiEhCRN4mIm2qmofbvBWDz94oIjtFRMx4scL1HwLwmyIyKCIdcFpOVYhITERScBvPqIikDJd7BMBpAL8fHPdKAK+B05jqg8utIaxSq3gbgMcBzMNpCl8G8IoLtQkAzQD+Pzht4RSAfw+3EdwJIAHgawCm4H7w/QBeFZz3W3AiZR5uI/mfzb1PgtpEDMBfwy22E1hGmwjmphf8u898fh0c95uH03L+bT2/V6m8L/L4acS6EhMelxZ+MXiE8IvBI8SaFoOI3Ckih0Tk6EV0cY91glVvIEUkCuAwgDvgdtz7Adyjqs+/eNPzqCfW4rW8FcBRVT0OACLyWTgDT9XF0NrUqD2dzhIsZhHa5ehU+2C8bJ1WPn4JEXOemHG1R1cmy6BVjil/acy97M3sEVXmU+34ygfwnsuddjEcPXN+XFV7ljtuLYthI8pNsUNwzpaq6Olsw/3v+RUAQNQuBkNLlFMqlUowB4VkrkjXRCTiJF0qGg3HYuYahWKe16uyAAsFNceTLpYq0yXz00SjkYp0zNDxiJhx3ndpWNUsHHMehHauqHA8UuK4RuzLQ9rK/7ve82c1mcnXsmeotFh/4oUTkXcGAR2Pz85l1nA7j0uNtXCGIZTb5QfhgjfKoKofgwvawI7Bfo2oe9vLxIFZ9cWiWfXmbTQvAOJlb34xuAY/zxXIDfIFXm8hy/HpWS7MsekF0ulsSKezuZBeNHOxrDxi3uSm5saQ7m1rDekNXe0h3dnIuSfi7jrJBC8ds9zLciMhl7TfhZh30r6JuVXsBdfCGfYD2CUi20QkAeCXAHxxDdfzuMxYNWdQ1YKIvBvOkRIF8ICqHnjRZuZRd6wpBlJVvwLgK7UeL1AI3OavVCJ7KxoGVbaZNCzQ7iXz5o+lTWYuz03l2HQ6pM+MzIX00VOTIT0yzuOn0hQf2aIRWWbuRTHzMmzaiqdIhPdNRkZCuru9KaQ3b+wI6U3bXVjF5r54OLahkTtMsRpU2f3t92JFCedSKNUc/8P5r/gMj6sWfjF4hKhrqLwCWOJqatg+IkaHtjzY6NmlIk/IG5GQDlj8yPBMOHbo1FRIHx8h6x6b43mLBaPwm3dCzMTKzEwRa2iq/A4JzBwNPZOZDuljo5xb/NgQAOClNzBA6tbN3SG9sac5pJsSFGXRiPnyolZmGe1rFYZlzxk8QvjF4BGi7hlVS9xLjTiIGU5XNKyuVDBaQ2YxpCfGZ0P6uRMTAIDnz3BsdJrnLdJuBAV37WVzErLgSISiKWKNrFLZN6Ela/Thu1Uq05AoktTMJzvh/vjB/qPh2LFzFCOv2N4X0rfspGuhq5VWqohQ9JWbhFf+nnvO4BHCLwaPEHUVEwJufktln/CvuNnNZxbIvofPUyt46thwSD9zyhmVpjJkxbmS8XxGyd6tV7G9iXmvfV08fktfW0g3p3hMQ8pc03hNZ6aMj2OEWsPkFP0dE/PGwGUtWYGIydEuhpNHx/kHL4H5HJ/jFTcMhnRHiuMJ82rrKpzenjN4hPCLwSNEnY1OEu6srYHGGkuKObLUccN2nz16PqQPnJkP6bGAS+dNgErCsPTujlRIbxrsDOkdgxQHW3rpeu5r4k49FeN1IkabiMC61o02QamG2Vny+CcPnQzpp8/QP3Iu8JvMLVDLiZYo7k6fpyEtb+4TjXNet+ykr6Ov2Qa3VEoAuzg8Z/AI4ReDR4i6G52WjEqW1ZZyFBkT49xaHzzJnfUzQ9QmRs3uO69uPcfa6CbespEGmn07ukJ674aWkG5vMmIlRjoZMUYc4wMolLmTjfvdaD+xFFl8ZyoZ0j/bvjOkb97G53jyhHu+7z9zOhwbmiV7j+cpPsaHKTK/b6x0yRSPSW6jL6PTRE/VCs8ZPELUmTMoNNjYFExQxuIcTc1HT3ODdegsdfiJOb4Ni8a8m2x2G8Sd2wbCsZt39Yb07g18RdqN5y9u3vpoxNgQbKi8jUK2nsqyABwTjGLsGGptJ6aU18BWcqpYk7tvY4LX+/b+EyE9Mse5Z8wGecpsQg+2cCPc283NckuH9crWBs8ZPEL4xeARos5iQoCAxRcLdN9NTHBTdfwsd4dD0zwma4JR4k3cKA1ucmxy307aEHYN8NiOpDFHG1ZfFsdoPaU2W8oE3dgYEvsG2Yh0E+UPl33okDM6fz5CUdXd4eTHTTsp1qJmM/3Np2l2P5s2NoQir33q7ERIHxrgpnVjI+0PtWJZziAiD4jIqIg8Z8Y6ReSbInIk+H/ld/a44lCLmPgEXAVWiw8A+Jaq7gLwLSxTy8hjfWBZMaGqj4jI1guG3wRXfAoAHgTwXQC/t/ztNIwxXDTBKkNjFBOnx5nRNJszu/MEWWBXJ7OV9m5zMYPX9nMn3RqneBEb32hnYszLOZN1FTGahYlzQdGE51tDb8RUISzPErPixgbDmPsG/3d0UuzduJHZV+cnKTLnj5KeWOQ15tPUuIbO0nw93Mdr1orVbiD7VHUYAIL/e5c53mMd4JJrE2WJt/MLy5/gcdmwWm1iREQGVHVYRAYAjFY7sCzxdmOfIsj0mZkhexsepZjIUEqgBKtBUAwMbiAr3drvzNCNKTLvhHkqqwWUzHa/mKWYmsvQC3rcLNh8nuy4NWKMS0aUxIxns1oafllovaGTQQJx0ly7odt4UzcwrvPsKEXf9DjnLnneZ2qc3+kZo4nVitVyhi8C+JWA/hW4Wose6xy1qJafgStUuVtEhkTkHQDuB3CHiByBK+Nz/6Wdpkc9UIs2cU+VjyrVUl7uWigFtRPSs5QH4zOks8ZTF4nSNt/WasREL9lqV8qxSTFxifN5GnYKakSD2eFPj08a+mxIf/vgIc5rkmIiVTJaiakSEzG0NWpZMRGxVVfM8Ut1JlKNFHttRlO6dfPGkO7roCh7YZJ0wQTDZEys5bmple/PvDnaI4RfDB4h6hsDqYrcomPhGZMEO5O1CatEPE5W29FC8dHfbnbwOccyz5yhHf/wacZLDs+N8T4lXr2vna7kFnDnnZuicacwx/tMauUaEhZlFd5sDYUylzdRCvwX+ShZeneUxrWtRlNoaqOYNGGayC/wmNwiReKkCQuoFZ4zeITwi8EjRJ1D5TWspzi7YKqwGdlQMj6DZII75eYmionGJEVMMdBOEm3cke+7ljUOrpunmPjh4YO8kRFNmTxZatGW8THR/GWs3oatRyqX3SlVCacvq0cUkDGjNcWK/EmSScZ1xlopyloTvN7sgrmnufRCpn5GJ4+rEH4xeISor5goKRaCQptZkzmVN25dmzBq7f4NJgwdSqNLdtGx+Ok8eWTKrPHcIkXAvNmdJ8pYt9mRFyuzehu5VFY7uqy+c1m1aTNe2U8Rlp8wYwmTLRWNGyOWCaptMKH9UVsrwoTtFwpWL6sNnjN4hPCLwSNEfQNiRcJay1pFNNi6DTYaKWrqLOTzdO2eP+0qpv3o6FA4NpO29adNMGqKCbabe+gDaLbsPcbjxdwzUrSZVja6yfhSqtREKG9bYKq2xQPRY9i+vaeYetFlGoxUjt6yb7av9uaxJvjF4BGizmV8FNGAJdsKb1War0DNzt5agNTslCNFp500mVrJqWZG7tuazwtGBsUW6A9oNEXgrt28NaQzeWoQxbwJgzWGJhNLWy7ubACtrVpXNJFUweGFCI1LXU30TSTt3I3foWAKVpd12rGtD2Ir/2k9Z/AI4ReDR4i6p9fFYm79JYx72thWYE07RZN5PG9yBbJZ0/0l6TSE1kay1xET4DqR4bGpOI+ZXKCbe2rRdK4x2oEt0m9FgEkCR28PA1itAUiM8cimAzakmAZ4ftKlxrW2sG5ET5e5njEiZRc4m0ze5nCYPlYmHbAxtfICDZ4zeITwi8EjxLJiQkQ2AfgkgH44m9DHVPW/iEgngM8B2ArgJIC3qupUtesAzpUbjzv21dTAW6dipnCG2R0XzC58ep7ssLFlS0i3B+z43BRL/pyapds63sry/bu37Arp1pSx3RfpvygYd3bB5Flk8yYayhjM8sb/Hi+aXJBpdqJJZ2nsammhptPZ3g8AiBptJqEmQskE9s6lOT67aMWEdXlzXu1Nl6Z2dAHA+1V1D4DbALxLRPbCJ99edVh2MajqsKo+EdBpAAfhGpy+CS7pFsH/d1+qSXrUByvSJoJs7JsB/BAXJN+KyLLJtwqW4W8wUZ2NSZNXMGd20IZNTprcivF5ntvX43ILXrKX99m0kdrEZMYEmG7bFtJdHca4Y74F6w8oGb8GDG27DaiJ2JoZZdW2bx9n24BTs1Q/Nmxm5beXDroa0BuaTbSU8YGMnWeFt2FTo3q+QK0lb/wUrcZ61tF4CWs6iUgzgM8DeK+qzi53vDkvTLxN20RKjysONS0Gca65zwP4tKp+IRgeCZJucbHkW1X9mKreoqq3tDSmKh3icYWgFm1CAHwcwEFV/Svz0VLy7f2oMflWJIJIkBfQ0sLQnU4jMs5PGeOS8TfMmXyG40MUAwOdLv9hcIA79p6NPE9tab6yxmimQIeJYlKTH2GLbNgiHkXjaI8aH0Br8/aQvmPDBs7d+uVN6+bOQI1otq5qkwfxxAi1onPT1CZyJYqDkrleYwu/g429DAquFbXsGV4J4O0AnhWRp4KxD8ItgoeCRNzTAN6y4rt7XFGoJfH2+7iw/RGx4uRbjysXdY50YnRPWyt381v6GHV0eozZ0bMZkx9h2OeJ09yedHS6R2gxpfbbkhQBqWjlbVF5p3kTGVUWyGqrwppjTAWQkhExWVPco910sWkr25oZ0RMYr3IZak3nTE/Oo2fp7h4zGdZFI8qSRsT2mFYJvS3ehe2xBvjF4BGizpFOgkjAn1uMy3lLL8XEC+1kk2OLZI05Y4wZHqMx5sAJt7Pua+AO+4ZtvB7UahakS1I598HmHpRFYNng3LJq4yRjxgCUL6s6ay5j/ohn3XzODfGZnzpGEXh8lIamdMFoOXGKpp4uioat/XSF96Z8wzKPNaDuG8il8D01q7ujlyt69zYm0E7N8405N2tqOJjAw7OnnC7+AxNMYt/KfZt57QYTUGMDR0xIYVkQS6RKo/Fi2UvHPwpl4f/mCHuu4XZHTroAm2eP0eP65AluoNN5ck81O95UCzeNu7cwWGZrJ416iagNzakNnjN4hPCLwSNE3TvRhAzU6OqRJOkdm8j25owdd+4wWWlpwZTvD7yGzx1hxbbFOernCzM0y15rOtS0N1K3TxoZYCzWZUmytrNMqawZuq0LbWwBJsx/cpKm5DNn+BxLPbiODnO+UzmKgKKxYTQbu8zOHXyOnRsZX9nTbFoiRK2gqg2eM3iE8IvBI0TdQ+WX6hzY3flSXCQA9LRzfV67mQfNZMmCnzLNw7Xozo2YdKlTJxl/eG6Y9D+foCh52R7GRt44QNHU3Ua9vUzLMNoHrC3CiIP0FOM1Tp+nVvDMUVaiOz7OOtlTc05UFYomedeWBTJxolu39YX0zabp2dYezrcxbkzmEW9n8FgD/GLwCFHnoqDAUj8uy3VtiZySCZtv6zYdWoyhKWmydp874UzT4yYWMW8aei1meOzwCXZq+cZZVn57vJHH9HSQ7SZMr4JUkqw8b8Lpswumc07ahLbPcT628FpOjXEs+PrVhso3U2u4bscg6W30yu4ynXsb4xSfMVvpyJZ+qxGeM3iE8IvBI0SdfRMKWerrWNZYsmQPCZFoIN8b3Mgdf8p0pWlpdkEkT79wLhwbSfOx5ov22qaqW44sfTTHm45O29L81rNZuWCONe2UbN2Eyo7NsgeMBTH6XV1k+9eYHpc3bDJdaXooPppMUdSIaeMcsbGUq3jNPWfwCOEXg0eIuhudNNAcSsaOb3N/oib02zYYKyRNVtJgf0j3dzmX9zWmTsJ3nzsV0s9PMEBkIWPc1kXjHi5j6WXpVWa8coU1W67HVmSLWN+AcSc3tDE2ckNg7LppF8Pqr+1hSZ+eJl4vaarQlarYk6whT6rGMFdHLT2qUiLyIxF5WkQOiMgfB+PbROSHQQvkz4nIyqtDeFxRqEVMLAJ4raruA3ATgDtF5DYAfwHgr4Ms7CkA77h00/SoB2rJm1AAS+lM8eCfAngtgHuD8QcB3Afgvy13vaXCmWp8xSUTIWRpa4yKlbE9ssxYgxvv205t4/YeGqv2TJhwcxNrODpBS9DYLI+ZNv0uF22FOXt/s1Uvq29t4jo7TcbYpn6KsIEeE6cYGNXaKRnQamosRIzbvCDLu6SLZr7VCpReDLXmWkaDbKpRAN8EcAzAtGoYbToEl6bvsY5R02JQ1aKq3gRgEMCtAPZUOqzSuWVZ2POZSod4XCFYkTahqtMi8l24Ci7tIhILuMMggHNVzgnbH28f7NdIwO5sFFFZgKkNVC2vJB1SkdhPupMjMV6vw7ihm03NgmtNcu6cEQfTxq8xbyqp5Yw/xEYuqdF4Ysb9njKFHmythBbj12gype0SUXevqO3RbBudmfIQFlHzrFV9EDWIlQtRizbRIyLtAd0A4Ha46i3fAfCLwWG+BfJVgFo4wwCAB8Xt5iIAHlLVh0XkeQCfFZEPAXgSLm3fYx1DqvVovCQ3ExkDMA9gfLljrxJ048p41i2q2rPcQXVdDAAgIo+r6i11vellwnp7Vu+b8AhxVS8GEblPRD51me69FcDPiEid/T+rx+VYDB97MS8mIvcGdow5ERkWka+KyKtezHtc5N4nReT2VZ777mDeiyLyiRd5aqtC3RdDYHd4USAi7wPwNwD+DEAfgM0A/hauYOmVjnMAPgTggcs9kSWsWzEhIm0A/gTAu1T1C6o6r6p5Vf2Sqv5OlXP+XkTOi8iMiDwiIteZz+4SkedFJC0iZ0Xkt4PxbhF5WESmRWRSRB4V+ck4osBk/xERGReR4wDecLH5B3P+RwATa/keXkzUdTGIyJ0ickhEjorIWmtNvxxACsA/rOCcrwLYBaAXwBMAPm0++ziAX1PVFgDXA/h2MP5+ON9LDxz3+SAujGRzxdafB/Cf4H7c/w4a5L4WuPm/KSIduIJRt8UQGK0+CuD1APYCuCcoSL5adAEYN86yZaGqD6hqWlUX4bys+wIOAwB5AHtFpFVVp5bqZQfjA3C6el5VH9Wf1McLAGYAvAfALQD+d3ChfXu9FFuvJ2e4FcBRVT2uqjkAn8XaZPsEgO5ad+sBG79fRI6JyCxcWwTAGYYA4M0A7gJwSkS+JyIvD8Y/DOAogG+IyPFKHC2ood0K4Iwptr7kWfhk8P8VX2y9nothI4Az5u+1ur0fA5BF7V/wvXCL73YAbXB9MoAgik1V96vqm+BEyD8CeCgYT6vq+1V1O4BfAPA+EalU/3IYwCZTbH0p2fJ8cJ3h4NpXLOq5GCpFW6za/KmqMwD+CMBHReRuEWkUkbiIvF5E/rLCKS1wUVsTABrhNBA3MZGEiLxNRNpUNQ9gFsGbLSJvFJGdQdnkpfFK/sSH4MTEFwH8AYDfvNj8RSQmIim4ENBoEF54WW0S9VwMQwA2mb+rur1rRVDL+n0A/hDAGBzneTfcm30hPgngFICzcJu9H1zw+dsBnAxEyK8D+OVgfBeAf4KL9noMwN+q6ncrXP//AdAAYAeclrNUcL0fqFhs/Q8BLMDtI345oP9w+ae+dKibbyJY9YfhSgyfBbAfwL2qeqAuE7iECLjGgwAmVfW9ZvzDACZU9f5gr9Gpqr97uea5HOrttbwLzkgUBfCAqv5p3W5+CRFYPB8F8CxY9vGDcE1aHoIzhp0G8BZVnax4kSsAdfdaely5WNOe4UU2InlcZqyaMwRGpMMA7oDbHO4HcI+qPv/iTc+jnlgLZ3ixjUgelxlr0WsrGZFedrET4smkphpdxoiYKOiozWk0nMomhVi6IjcTm3xCurmRCTVNjSwwHjfJL9btVLJNVm2ZX5P3mSvQAp63DU9NU9aC6a9tw5zV0kEPi7LiYdb0Yp7TFjuXKvkxNtfTPlQmMz9eS9jbWhZDTUYkEXkngHcCQLKhES/52Z8HAMTzzKFoNfVnbCLrtMl0mp1hX6qsCXMPv5kov/ymGH+sV978ypC+dd9rQ3pDL7+bBCPokTZNRqaypCfTvP/QJMMaz85zLiPjpCePDfGi8ywflM2w8V8h7+hikde2hUXFJicLny8WtS0WScaTzOiKRJmm9fgT/8JM5ItgLYuhJiOSzZto6ejUpRUu5kcvmQ4uYnIC4glT7CiaMMfw+MaoW0j9bXQIXnMt2yNv2f2KkB5dZPZ2PMvM55RpXjY+Q4+y6TKMVAMXz+7N7I95bYwrKVJiip/ebPpdTvJrefb0CyH9/OknAQDpafbDzMwyBbCU4wsTUS6YklmwtsJfsWi4UWTlbSPXsmfYD2BXkI2dAPBLcKZYj3WKVXMGVS2IyLsBfB00Iq17a+JPM9bkGFHVrwD4Su1nCGSpNIepf1TWCcZUosjlTeeYEuVxKkn+3dviRMm/egn3A7v2Uak5MUM5euyM6fjyHFnzgpHpOdNy2ewHkTANyBpMGl3S+JZ6WsiaBzootnr6KU1f8lJWpm3edi0AYOrckXBs4uyhkD5z6rmQzsxR1JQVOjH3j8b4rInYyhvKrtuwN48XH34xeISov/880H/VKveGLhgxETMVWjtSPGZTO3fte/bd7D7f9q/DsefOced/6Cj9QjNTpkZUhtcu5Gl/KCvfZ6pNLWR5/1kzX6vbD49x938wwoLhiQaj9g6y7VLPBhfrcpPp69kzuCuk92/aGtLffuaRkM5OHA9pGJtHebtmioxa4TmDRwi/GDxCXAYxsaQ5kKUlkjQZJ6LcBeuiaXNs2vy+4kZqDi0bnEXz2fPc7Z84TRadnmLtpsICWWrc2EqTpqwgooYWW5TQFBcx7YfzpojHgjGZZ0wFksKsqV91lKJkfNx13subYuBNG8jer99O62mknYa0p594NKQnRqjNF7Psp1Eo1Nfo5HGVwS8GjxCXIRp3qaYTR2wj+0iEO/7+zoGQ3rHr5SFdaGfJgwNDTsQMjxhjkXEwtVICoauffoT+VqOpdNGpE201xhpTf8mUd8LsPMXB6CTZ/ugYjVfpSTrZshmKm2yWYmV61FVUPGR+hcn0XEjvyfCZXnMNa6pteBW1pYefoPicOknDXGSRorJWeM7gEcIvBo8QdW9yuhTIYf0RpRJZWluL6fq+je7naPLmkD56hsekpx0LThSoNVy3nVVY99zA3fnWjZRNve2mTF87NRGkOK5GmbAV9jLGtz1reg6dP09/xJljFB+nT5L1HzStkYZGnCiZzdNVXzCNXWMn6baOLp4I6a69FJ+ve9nrQ3q/MZidPv4YVgrPGTxC+MXgEaLObYkECJt4Gh+EWZI9nRQBPa1kh+emTI/sabLPWN75Hm69ljvs236O/a837SALbjDSwIRAlndIQmW6HLYtEbWPawdJL1xDH8T5UWoFjxrW//XHnFFt+Lnz4Vgpy8mcWSA9fZbhctcYF/bLb6BLvPGm14T0P8yzuWut8JzBI0RdOYNATAAGzaUNprZyazvfqIKJL1zIciMYzfFNuvl6xzFufwPPG9xmAj5MGGVtc6xM1wJ7r1Qn37OmNs69eTPtApu2OFb1tYf5+ZP7GbtamOOxBbNpPTFKnpUyraDbd5B7Dmy/cYWz95zBw8AvBo8Qdd5AArrUYsBsz7paGbbe3BEWYMPpGU5vapabsJ0b2CX+da915w5u5O4wavMKYEs+mVDysvfAtteq9pVUExo2Acb005DpkIzHaJreaGRJ+w4394Y3c6OcNs3NDjzK2MhSluedzXKOEdOTc2OW53Zt4PdYK2ppMfCAiIyKyHNmrDOoXrYuqph51IZaxMQnANx5wdgHAHxrvVQx86gNtTQseyQoWmXxJgCvCegHAXwXwO8tfztFJCiHlDTGhZ5OXl4LrPk1PmJ2zUafv2kXbQo9vW681GC8gXmaf6cyzJDqiNKr197IJmLRmGVs1oZgAlrMESOj1ISefvrRbv6gAAAgAElEQVTpkD5+7EshPTPxo5BuitME/bMvuy2k91zr+r3tamIFxF99PcPqv640dT/6vZMhXcrSFXvuONP4NrYyY+wV+24I6f8LtWG1G8i+oHrZuqhi5lEbLrk2YRuW5W3CrMcVh9VqEyMiMqCqwxWqmJXBJt62dnapBEmjqSR3592dTGSdXWSsX3FxLKRbGxnyfv1OGpgaWtx6/tL3/iUc+8yXWQU41sb7bBaagu8eJDu+6V/9fEjHt3AXXorQ+3n0FOMLv/mtr4X04/sZwj41djKkc7OcezRHdn/sn78d0m95o9NEbvt5eh5bu+ipPb+LWtOBF2hcGjtNrSGW50849jxFYqJr5SWpV8sZvgjXpAzwzcquGtSiWn4Grv7hbhEZEpF3ALgfwB0icgSujM/9l3aaHvVALdrEPVU+qlQy96IQo01E22joybRRgzh/kqxR8mSN17+EO+WGvTTAPHPcGXp+/MPD4VjSbP3HT5wM6XyeQTQPDzHxdniRBqKX/fxbeJ+el4T0s4doADp0iKHq/RGKgztuY8+Tbdt57swE37nHnt4f0v/3w/8vACDTzqTan33DtSG9eSeNUa0bmXU1MUrjlsxTy8rnSZ8Z4rxqhTdHe4Twi8EjRH1d2ALEg5I5DSYkfbzIwI2ZObK39gTZYVePKZ5lXMXnJg8CAF75ChpZfnnL60J6dJRBHv/y3WdC+sgz3wjpU1N0G9+YOxnSOr8jpM+OmN28ueZN22gA+zevp6G2dctNIT11gs8xETO1loa/BwD48RPc+d/+Soqswc3UeLaauMezhxkPqRl+L1lTUGJo3IsJjzXALwaPEHUVExEADcEdB9qMy3mOtvuWIuMXBxq5VndtZjRQa5Ljt+7bCgAoGO90c4o7753tfRyfpUFr7AgL2U5OfSukFxZoP0s086KLszRY5RfI9pu7GF3U2s97wYT8x7fT99FyjuIm1eTEQG6evo78DDWe5m4al67dwWsc6qQBbHSComHCeOuj9gupEZ4zeITwi8EjRH3FhETQEnfss7OZLuSJCTqwYjm6Zzd106bf2c30JlPdBz0dNFItYd4EHKVHaYGaGKPWUCyx8lsqacoIx8mORai22CKmMRP0FIlUC6HlexZJ0L2eaDGV7YJzi3lT+c5oBHETsTVgnn+jqeEwdozf0aJSU5nDCiOB4TmDh4FfDB4h6iomoiJoDfImGlMUB6cLZIFxk0XU3UgXcixS+7o9PkwjznOnGQn0yFMPh3QkQg1m7x4m9Xb10NC0qNR4IlFThd7ezGbkVu3dYcbFHB+IiVyJz5YzpYBSEdLtzbxrS7MRX+YYG9abm5jCSuE5g0cIvxg8QtTZNyFIBtXUIhHeOpszhS1N7eaWFP0XkRWICY3RiPPdxxmkevAk/RG7W3m9bJ4+gFzOGMOSpGOmLrPVMmxTlJIx9ERMCK2YIqKRqBUZkeAaHCqa5iSCyq0EshnbiMSkEpocjqRUTxuuBs8ZPEL4xeARos5Z2EAkqM+gljXaUmqm55OUVs7qAGDTAN3Kt1z/MyGdHaWrPH3+YEifOMVWW/vGh0O6u59RR/EqxUINVy9rKWQzLSRCsWK760hwnVLBihoakWzHmYwRDdlFc5+yghK8TqRaI6uLwHMGjxB+MXiEqHsZn2gFbaJk6i8XDb1oNIuVNGNtStD88guv+dmQ7ojQuPT1f/gfIT08/PWQnh5jYG1XN4uP2lpDefMOlfJmx29lhk3Is4Yp291mqZaQOTSfp5+maLST6TkeVDTis2RUkYj5jlKRSyAmRGSTiHxHRA6KyAEReU8w7jOxrzLUIiYKAN6vqnsA3AbgXSKyFz4T+6pDLXkTwwCWkmzTInIQrtvtyjOxVcMdd8wYX2ztaCsNZtMscmGNO4DN2VyKDOIuPQH6PfoaaLh6xY3MvTjwQ5M6d4C+jLlpkxYnNF5FTdQVjAFqforHzE+Sbt5oWiXkOLec0QoWM84/EkswuslqG7kcxd3JM9SEhs7x+EKR80oYGdTecIkblgWp+TcD+CF8JvZVh5oXg4g0A/g8gPeq6uxyx5vzwizszMLC8id4XDbUpE2IM8Z/HsCnVfULwXBNmdg2C7uvt0fTRWdUSedYUMM0bcFihAads6YXdn7a9MjuNEaXrGvelWC8KpLxrSEdaTb1nE1BzplpXrvNBLWmmhktpCljxGkj28008JjDMzQS/fBJaiI78rxvqXEwpPf/M9P0igUXkrVhO30gEudPMmF6aw+f4dzT0yZaqsjjE+Z77GgyFVBrRC3ahAD4OICDqvpX5iOfiX2VoRbO8EoAbwfwrIg8FYx9EC7z+qEgK/s0gLdUOd9jnaAWbeL7qF73bkWZ2IVSCRNZxxo7Fygmog2cxqKJ3Dk1TRZ8dMzslDcxgPV7X3IZzPFz7PW4ZwdZcXqBrPaZI4x6Wsgwb2JwkGy8s29nSCdaKT4272G63Ma9rFB76DGW8s898n3O8TEW8Zib5xzGlCJucMBdf8t2dplJNtMfMnyOmsXJI8y3yKQZ8Rsr0TCVMqFOAz0rN/t4c7RHCL8YPELU1TdR1BLSi84wM2VS6uINZIdp03DyRNpUS32GhpY37OBO+dab7wYAfPSZ/xqOPfgI/Q6NylpQvS3ko9v66OZ+5Q1snTy49fqQTsV5n1sGmZ/R8UZuj74LsuMnH/tcSI/mWQykKUX/wfaNNHzt3r0PAHD9TXea8/j5/ieZ5zFyit8XjKEJwms3dNDYFunw7Y891oC6coaSAtnAqDA9wxXd20cdfipJbjC9QI5x+DD17FcdMZuw65xd4vb/7Q3hWPM/862IpVlLYUc7x2/bxY3izhv3hXTKtE+0wefd5rXp2sENbP8vviykr9tDTpIvsM5Cq+nWu9lkgPV3uTlMLHKj+p0fcL7PHeSmMTvLZ44Ujek9zu+xuYv7/Mkik3NrhecMHiH8YvAIUedWhgKUHFtfHKc5uL+fLDDfRPvDmTRtC2dNn6dnj5K+sdOxzJ/bwUyon9tNurBInbwhyus1pCgyIrFaklRNbKYZ3byRYmXTxh5ztD2eZxRpOsHwkHuOx35McfD4AXpNz5yjaMyZpu7NJm1gsJ0iqKeXNSHOLxyr/ihV4DmDRwi/GDxC1L1hmcCx51yaJtp4hubd7jay8uEZsu+pWbLAf/4xTc9Nra7sz8tayaJbegzbN+V0Vr70l29sKFXEh21PsJAlffoExeDTTznx8PhzFA1HjtAukp4xNaKForGrg8+3cxtLB83kKBJPnuF3Wis8Z/AI4ReDR4j6axMaJJsWyFTnZulN7NrGXX7LPE29mQUaVw6eYsxi4WuO1Uaz3Kbf9BI2QGvr427bdAxYxZNXcdya0MxCnoE544bFP3eYrP+Jp8m+jxx1NRTOnqGpPTNtShqZpNouY2ru38TvZQ6sw3DixBMcH/HahMca4BeDR4i6iglVoFRy7LZQIts9P0HvXEs/+e4Ng68M6fiiCfQYoi/jeFCd/wsPU9S8cJwh6zv3sMho3yB9B4NbKI7aWXiurH5CCTbTy4g1U6950hjPhofJ4g8cJft+9hDFxNAwd/yTQZh90UT+J0zCbG83NaGN/fRfFIrUSE6O/TikxyfY+iA3V3PMcgjPGTxC+MXgEaLO2gSgARvMm935hKnF3H2WImP3wGae2EsWP5Mlmx4dcdc5OE6jzMkfMLCk/RBdwn0dfNwtvRQ7vV0mK8nEhNgcrnlTamjSZHpNmTjN8SmKldFJaj8zxseyaNoVL9ViSMT5XfT3MQx/Sx+fubTAtgIjU9QUhsYPhPTcjMlWKK38Pa8lVD4lIj8SkaeDxNs/Dsa3icgPg8Tbz4lIYrlreVzZqGX5LAJ4raruA3ATgDtF5DYAfwHgr4PE2ykA77h00/SoB2oJlVcAS9vXePBPAbwWwL3B+IMA7gPw3y56MZGwalvRiIlsnmx0bM74LMZYaqeUoJt3e881Id0UdwamkyawZ2qBj5U+z/uMjZn4yuNk7yYEE3FTh6FkdvY504q4CIqknCnBY2tW54tklEVTQ6FkrpMMMrYGN1GdGRggnVugiBue+GFIj4w/FdITk4yoiprk43j0EtWOFpFokEAzCuCbAI4BmFYNkwCG4DKzPdYxaloMqlpU1ZsADAK4FcCeSodVOres/fGiT7y9krEibUJVp0Xku3BFO9pFJBZwh0EA56qcw/bHHd0alkczhRjUFNmcWCRrTs/SZt/dwON39dNd3dXudt/RZmP8Oc+wcjFldhKmEETUZG4pqCkUTDHNkpljyVRyK5gsJjHRU81JPkcE9FOoKe8TNZpDaxCl1NZu+lQmaaCanaN2MFbgM03OUdREbEkfNSWATAJzrahFm+gRkfaAbgBwO4CDAL4D4BeDw3zi7VWAWjjDAIAHxRUtjAB4SFUfFpHnAXxWRD4E4Em4TG2PdQxZSRW1Nd9MZAzAPIDx5Y69StCNK+NZt6hqz3IH1XUxAICIPK6qtyx/5PrHentW75vwCHFVLQYRuU9EPnWZ7r1VRFRszf91hsuxGD62lpNF5N7AbjEnIsMi8lURedWLNbll7n1SRG5fwSnhs4rIp4L5zorIYRH5Dxdc+61B4dW0iDwvIne/aBOvFaq6bv4BeB+cFfTfAWiCM43/AoAPB5/fB+BTl/D+JwHcXuWzrXCGt1iVz68DkAzoawGcB/Azwd8bAeQAvB4u2PINADIAeuv5/a4bMSEibQD+BMC7VPULqjqvqnlV/ZKq/k6Vc/5eRM6LyIyIPCIi15nP7grewLSInBWR3w7Gu0XkYRGZFpFJEXlUbCsZnh8VkY+IyLiIHIf7AatCVQ+ohlYhDf4t5QEOwpn3v6oOX4bTunZUuNSlQ53f7DsBHAJwFMAHVnFuAVXevEqcAcCvAmgBkATwNwCeMp8NA3h1QHcAeElA/zmAvwOdcq8Gta6TCDgDgF8H8AKATQCuh/PcKoADAN4THNMJ58s5Evz/cbg3XgE8AaA5OC4K4HsA/k1A3w3n72m6KjlDYLT6KBwr3AvgnqAGda3oAjCuqoVljwygqg+oajp4I+8DsC/gMACQB7BXRFpVdUpVnzDjA3C6eV5VH9XgF7sAbwXwN6p6BsAEgD8Ixl+J6vW1x+EW56sBfAFB3WNVLQL4JID/GYz9TwC/pqqmuuWlRz3FxK0AjqrqcVXNAfgsXP3pWjEBoLvW3XrAxu8XkWMiMgv3VgPOEAQAbwZwF4BTIvI9EXl5MP5hOM71DRE5LiLVCqRvAHAGCMslfysYn4Mz1y/V134wGH8QwN3qnH7fhxMNvxHM9XYAfwlXizsB4F8D+B8iwhJzdUA9F8NGBF9egJW6vR8DkIVjobXgXrgf43YAbXAbPCDIhlHV/ar6Jria1/8I4KFgPK2q71fV7XCb0/eJSKUSh8NwImIJSzF6W1Bbfe0YuCe4CcAjqvq4qpZUdX9w/ko0lzWjnouhUkpSzeZPVZ0B8EcAPioid4tIo4jEReT1IvKXFU5pgWO5EwAaAfxZOBGRhIi8TUTaVDUPYBZBCxAReaOI7Awq4y6NF3/i6m7x/KaIDAa9Nj5gxsvqa4tIr4j8UkBHReR1AO4B8O3gkP0AXr3ECUTkZjhR8kyt38+LgjpuHl8O4Ovm798H8PuruM7bADwOt9s+D+DLAF5x4QYSQDOcJzUN4BSAfw+3+HbCseKvwW36ZuF+jFcF5/0WnEiZh+Ne/9nc+yS4gYwB+Gu4xXYCwH8Krv/b5vhDcPuPHjjOVgzu9yyA/3jBc70bTjylARyH6/FR1w1+3XwTgaw/DFdV9izcD3Cvqh646InrAAEXeRDApKq+14x/GMCEqt4f7D06VfV3L9c8l0O9vZZ3wal4UQAPqOqf1u3mlxCBBfRRuDd+Kdrlg3By/yG4/cRpAG9RNYUprzDU3WvpceVi3VggPS491rQYROROETkkIkcvoo97rBOsWkwEFsXDAO6A23XvB3CPqj5/0RM9rlisxfceWhQBQESWLIpVF0M8ntBkcuXtcoALDRKrNVlIBeoC2iTOSFk/6cqFvGyBr5LyE5vOr6ZHddm7t1y/aq38x/LfRflRC5n0uNYQ9raWxVDJoviyKscCAJLJBtywL6i5oMs/hP3mSuahSyYMPBKMq7EL2S/fImIamkfN/WNmKnHTLTdmsqtiwmvGbQNy02JxUXl8xnSrXTDNzk0CFiKBM9S6iOwiKuuUaxeUWUQlU+ciUtbllsc/uf+bp1AD1rIYano9ReSdAN4JAInEynstetQPa1kMQyi3zVdMpFGTRNPS0q7xmHs7bYiALadbzlKrcAZz/aW3K2K4RSxKOm5KATeaBqItCT56W4rHNzdTjKWS5BKpOOlWI+oaI8zhnzNf5+gCk15Gp1jUazbNYOn0tEthnc/x/vPm4WwajJas2DHlh83xVur8ZATG8liLNrEfwK4gNT8B4JfgOtp5rFOsmjOoakFE3g3g66BFcd2bln+asaZIXlX9CoCv1HyCANGAhcuFH4RYPkfQipil6zWaDnjtKYqDJrMJTJqcyoaC6T89zzzNgultnc3z+Kxh0+koRUbCtC5Kp1irsWsXq87sGWgP6b49W0N6Ycbd69mzLAZ2LMPiXZNjwyEdUT5TSfmsUSsmzPcYjS6jqVSAt0B6hPCLwSNEfRM+1GgLZdoEUWboMWTKaAhNZmffmHJsujnBdPRknmxX06xskp2nwzBjaJ2nOFCtLKaqMV07Pm/mfvoon685aUr99rMf1rXXucy7m3bQHrStRDFx9BTndWaYYm2+wJ8tVyw3gS3BiwmPNcEvBo8Q9W1yWipiJqjGYk2nlqFZk3Eiyel1tLI+YrOSlXbFnKm3NM9K85g1LQDTNP7kTQUVzdFEHNfK5mAtl18V5yvGMNZszMdRaxpbIIsfM5XfJyddvcqNm7aFYwN9tOO9dMtLQrqrkfa8Q8M0YtmamHljmo4u5/eoAM8ZPEL4xeARor49qkQQWfIJqK2NSFabMC7EJrOxb4nQC9hkDEaRtDPcFNIUEwuz1CBKBevrMKzTiAYbB1+q4gqPWGcqKtOmw2CZj0Ws+BBWey9NO2PX0CLHZmZZ7Kt/oykj3MnOKYUeirij51kEbHSeGlUpsvJQAc8ZPEL4xeARor5iIhZFqtvlvWaMDd4Gi7QkGfPQZRqBNJToP0gVyFbn553mkM2QRaoxxESMcStmNJiS8TUUDV1uXTLHVwkPtJt263Iv38xzPGLpoHRwboEGsJEhBoqpqT1ZKlHj6G6nryPbTgPb9AxbIuYjK/9pPWfwCOEXg0eIuoqJRKoRG/fcDADI5qkdNOaNCDAlchvSZHsxYzwqWZdz3omVrn4WOeno6OKxeYqUuUkabqanSGvBioPKEVjV3poyV0q5zDB0RTL8K27iK1FgSYax4aMcj1E72NZAzWJn36C5HGd5fHTliVueM3iEqCtniEkEXQnXka3BNO2MZ22nNXIANb0n5he4UcoZE2z7wC4AQO8gi8Bs2EiTbpPxZs6MHArpk8fYv2F0mG/RwoK1OpjYTOsRNEdEyowOVWwUVUzDS5vSso2nkmPGCtxkz4+yocZ4EzeQg61bQnr7ALlEMmX6K9UIzxk8QvjF4BGivnYGLSK+6MSAmgCUvDEl6yTZYWSW7LuY4caqkOO0s0EP7HyJMYLRFINF2kyj0PZ2ej4VNFlL6XBIj4xwA5tdsEH5VYJeqjgHq4kGu4NcsoGUyuwQ5trWZL/AzfTE6PGQ7ug2TVwHWBVJo3zWWlFLv4kHRGRURJ4zY50i8k1xneu+GZSx8VjnqEVMfAKuBqPFhSXtfAb2VYBautc9IiJbLxh+E1yZOsCVr/kugN9b7lqiQKroWGI0y51yLEcv5KLRGvIZahm6SE9d1HgBp8dduqckucNONFJTaWiiltHeuiGkd+x+dUjHi/wa8gVqHxPjnFcha7QMo8/bopQ2Z7MsIdccUxYkExwStZqKuUZRrMmcIfyFOX5HcxPUvrp6qEX1dw9gpVjtBvJiJe081ikuuTYhpnvdgmlz7HHlYbXaxIiIDKjqsIgMwFV6rwibeNvR0aPHg26knUmy48a8iV9coGhYXKAoKUtlN4aZSNDVbfY8NYJzpqF1Itka0rGdxmTdtDOkN+ziXDIlLthC6UhIzxp2nMuZlPyyhGAbP0ntQ6L2azbHFJ2QscEvNqve0iWrWeRojp+d5vc1a4Jboi0UlbVitZzhi3Ad6wDfue6qQS2q5WfgClruFpEhEXkHgPsB3CEiR+DK+Nx/aafpUQ/Uok3cU+WjSvWUL4pCIY+xcWc8iTRQOxDhrj2WJQsslayfoPLuPBoExpQWaaCaOMsAkYipnxAxW/X4DmoZLe27Q3rzTtvYlIaskxqaWTAzacTXogm/NzUiojFqN01tnRyPkpXnM87wlV+01+P3ArH9rG1FF94zM0/j2dQ0xW1DF+9ZK7w52iOEXwweIerqm4hGImhpdEmzsahhhya7qVSgGUdMbKJU2bWXluIn1fSHzpBdTp4hexeTvJuI03a/ZQt9Ga29FBmDRRp6SkVqMMfzrEkyVzI+E2OBisfoE+lop2u5vYu7/FLRaSijwwc53zHOPZ+rrGXY3t35HLWJnNXEzHdaKzxn8AjhF4NHiLqKiUgEaGh0t1zyUQBALG8MKqZ8Wb5QVtctpCrFGorVMYwdv5RlrOPYKVPL0WgZsfjNpDfRDdzZfy2vYww9JZPRdewQ3clzcyZ7K8IaEtFmuplberaGdGuzY/exBK+9uEhtY3aaWoZN8LVtukomZjJnKszlMyu39nrO4BHCLwaPEPXVJqIRtLW7kO9UmkaieM7UOTZ2eqkhWmgpaLU8EcoEshYpgmSBBprhUz/iMTGTGGs0jk0bGXLfs+H6kI7AaD9FHn/0KH0ZNgu3aMsbN9KQFA8yi9u7KEZ6ekypoTmTEpAzWpZNADMGqOIij8+XBRnXBs8ZPEL4xeARor4ZVYkYtm50NvPimNkFG8PNYtQGni7fEkAr1GGzbNQmuhaL3GGXMmSvY6dp9Imagp+RKLWMjf0M82zfeENIbzbuk8UiWfn0NDOgojHOIVpWxdONFwrGv2EKkUaqtBWoICWDD3idnNF+aoXnDB4h/GLwCFFXMRGPAH2tjq+dHzH8tcA1GTGldrTM0FI5qXXJZi9mXZdnuVWujSAlagT52aGQHj1NNh6zNaJjrLw20Mtg0/6tNF7ZhiPxMYqkeBNrTpgAKBQDZ0axUNnoVvacZal+FjY5mJ/kFlfeU91zBo8QfjF4hKizbyKGpoSLqk/GRsJxMX2hMsZYs2AZolRmk1ppEFKFNLt648sQ46rOTrOs/9jQsyGdTPBCifgtId1lIooGdjAXo7WP/otMjtdPmpYHshCw8mJlMaGlKqKRo+V9qYw2sZj12oTHGuAXg0eIZcWEiGwC8EkA/XCxqB9T1f8iIp0APgdgK4CTAN6qqlPVrgMA2VwJR4Yc+2yOsxRNoom5DZEkbfdlHLCsrZ+Z35IcsJpHWZ3nixfKcM9I9hoz7u/s1OmQHj5jsrxNlBT2XBeS/f1M30s10BXdYXIxxFaqyzs/hNpWh1azKM/LI2lEaTTOeVlJWSw/uSbUwhkKAN6vqnsA3AbgXSKyFz759qrDsotBVYdV9YmATgM4CNfg9E1wSbcI/r/7Uk3Soz5YkTYRZGPfDOCHuCD5VkSWTb7NF0o4O+p20Ns6KRqSTWSTKZMWNj/NAhUFm05QodaSdXeXdbY1PSijZXWOjD/AMNiCYa8FJaufnmFz38g5XjOW5HU6O27jc6R4TDzGZ5IId/mRiDvXRi7ZmtPlktFoIcYlLnH+hAXz3Fpa+Xaw5jNEpBnA5wG8V1VrdpbbxNts1ifeXsmoaTGISBxuIXxaVb8QDI8ESbe4WPKtqn5MVW9R1VtSqcZKh3hcIahFmxAAHwdwUFX/yny0lHx7P2pMvi0UChibcrWeW5oY3dNu6iXFGmjHjxvNopi3dZTN/IKdtZZpGOaehm7pYZm8ndewcVhfX39IN7XTiFQ02d5qdvkmZhXRGEXP7IxpbWAanyWbeIw1fOUDX4b1wRRs8kWZC5vfhZicjIjpL54zdbLLMhNrRC17hlcCeDuAZ0XkqWDsg3CL4KEgEfc0gLes/PYeVxJqSbz9Pqp38ltx8q3HlYv69rWMCKTBscxpE0iaTNKI09hmspebOZ7LMCegaHIulrrHW22iZHfkeaohUyNsZHYuycDTxhSNRY2tvH+rKRUYi5rtlTH6ROx4mSvBfLVG3NiUwVIg7womb0RNtJQ1G2mU4iCWosEOpsfnohE3Cznes1Z4c7RHCL8YPELUN9IpmcKGoEiGRml06m7n7rh5nlNqypjSe6Y42OS0cc/qT2oTZShSTBRNldXzp34Q0gsm0ml8hFnY7d3Mzm4x4ivZwPkmrXEpblh5zIhB01GnuJg1tJMrCyY4t2DaHdis8YgxnolR0Qsxahk54wrPFHykk8caUFfOkFnI4okDrsRO12b2XNJ5ruh93dwQ9fQxCdZ2rp3LMgBlqYyOmk1lWdMQo3ujZPpYZbiZnF3gWzQ7Qk9lJMa5xGzFNrOBFPNmRk1fqDLOELd9sozpueg4XC7HBNtcyXCDGDeKyeY2ntfI8byZY9ZslmcWyIFqhecMHiH8YvAIUefE2yha29zGMZtmK4HRCFnaSBMzl7Z1UP9v7eUGsjdt6jvPuLI3GVPbuVxMWPFROeBDlWKilDeV14yqni/rRWVtC5XjFMubvUvFw5fIkvW4GtHQ2E4zecSIiawxQWeKnEvabCCLEVsprjZ4zuARwi8GjxD17UQDQTy4ZUuC3sGmBu6I50oMBBkz0+sc7Avp3Y1kmS8c/j4AoDhGm0Ru0Zp8DQu2dTWrhNCXs3fS1owhqBy2btsDQCtnRpUF4QSlfiTF50l10LYhKZrDF8wEZrIUk3MlfkclGxsZuzQxkE++t28AACAASURBVB4/JfCLwSNEXcVELpvB6eefAQBELEszBh1r6Glop8l6Rzfpvd3cZe+48Q4AQNPhZ8Kx4RGalzOmO641TNkWACUjHMq/kCrN0C1dZgc3GVuRyjGLEWOyjgfex2gLRcOCyS5bMN7MWSMaFoyMWzRBNKYaEjI+o8pjLfCLwSNEXcVEsZDH9IRj4baqWll4uGHChWHyvbQJrT/dRJ/FS29w4enbX0rRET/+LyE9dfYE6XH6N9I53mfB1H5oNHNJVSsjVKYRmOvY+gimKGgiYQKBo9SWskVnGJo3XW5stbucibvMm/GiEU1Wg7BeTiuaaoXnDB4h/GLwCFFLqHwKwCMAksHx/0tV/08R2QbgswA6ATwB4O2qetG69qqKQhDyXh4Sbg+yx5NNnj1L/8FoA/0Up9MuPP3GvdyRv2oDk2H3bvhXIV3I8hrPnWTtBWlh4MjkEVZ+azLFP2Nl/gWTpZUw7DhmSv8rRcO8+VZm5ujwmFh0z7GYt60EbLaYjf+3hjFj9LLaTFlB1Srf70VQC2dYBPBaVd0H4CYAd4rIbQD+AsBfB4m3UwDeseK7e1xRqCXxVlV1yZUXD/4pgNcC+F/BuE+8vQpQkzYhIlEAPwawE8BHARwDMK3MGB2Cy8xeBhpqDlLFoFMyoeRaxWegeVNTOe3iGg8/z9D3qSFm+rU0syXwwAaKkqaN7GvZmOA7sdO0DW4x9v2YiaWczdDlfmrcdL2Z5Bzyec59aoGiYTRNUZUN6kGXV7IjmTcuaYgt72PGy74vc5mqQaHVUdMGUlWLqnoTgEEAtwLYU+mwSufaxNvSanK+POqGFWkTqjoN1wT9NgDtIrLEWQYBnKtyTph4G1mF7utRP9SiTfQAyKvqtLht9O1wm8fvAPhFOI2i5q63kSAgNFLFPyyGHdpSO3ETeJpM0qCTCuik8TXML1CMZPM0Ok3PscZCQ5zHN8epHTSaMPRGU/ugJUYxkSlRDD1xgoG1m1rYXrmvlaLh3AQ1lEWT6RQJ3qViiTt/q2XZzDGbJVa0FeGqiIPSKsRELXuGAQAPBvuGCICHVPVhEXkewGdF5EMAnoTL1PZYx6gl8fYZuGotF44fh9s/eFwlkNXsOld9M5ExAPMAxpc79ipBN66MZ92iqj3LHVTXxQAAIvK4qt6y/JHrH+vtWb1vwiPEVbcYROQ+EfnUZbr3VhFRo3KvK1yOxfCxtV5ARO4NDFlzIjIsIl8VkVe9GJOr4d4nReT2Gg8ve1YR+VQw31kROSwi/8F8tjd4pqng3z8FxVfrB1VdV/8AvA+usty/A9AE5yv5BQAfDj6/D8CnLuH9TwK4vcpnW+GsJrEqn18HIBnQ1wI4D+Bngr/bg/MFQBTAbwJ4pp7f7boSEyLSBuBPALxLVb+gqvOqmlfVL6nq71Q55+9F5LyIzIjIIyJynfnsLhF5XkTSInJWRH47GO8WkYdFZFpEJkXkUSnLqQvPj4rIR0RkXESOA3jDxeavqgdUw0qjGvzbEXw2raon1a0MgataurPylS4R6vxW3wngEICjAD6wyvMLqPLmVeIMAH4VQAtcPMbfAHjKfDYM4NUB3QHgJQH95wD+DvTSvhrUvE4i4AwAfh3AC3D2lkfh1GYF8FvB550AvgngSPB/B4C/BZAJjnsCQPMF858OnrEE4A+vSs4QWDA/CuD1APYCuGcVMrELwLja+rrLQFUfUNV08EbeB2BfwGEAIA9gr4i0quqUBjWyg/EBOP08r6qPBm/shXgr3AI7A+A9AP5tMP4b1Yqtq+r/Abc4Xw3gC3DxIna+7QDaALwbzrJbN9RTTNwK4KiqHlcXEfVZuGLkK8EEgO5ad+sBG79fRI6JyCzcWw04YxAAvBnAXQBOicj3ROTlwfiH4bjXN0TkuIhUq5i/AcAZZbH1U8H4C7hIsXV1XuDvwzn4fuPCi6pLC/87AJ+spSb3i4V6LoaNcG/QEmqMgSjDYwCyqD2Q5l64H+R2uLdtazAuAKCq+1X1TQB6AfwjgIeC8bSqvl9Vt8NtTt8nIpVqXg4D2GT+3hz8fxMqFFsP7mMRQ7BnqIAIgEas/DtaNeq5GCoVFl2R+VNVZwD8EYCPisjdItIoInEReb2I/GWFU1rg2PAE3Bf7Z+FkRBIi8jYRaVPVPIBZBKXmReSNIrIzKJW8NF4pGOMhAL8pIoMi0gHgD4Lx9+kFxdaDNzwuIs0Bx3odgHsAfDv4/A4RuTn4rBXAX8GFEx5EnVDPxTCE8reoagzExaCufvX7APwhgDE4bvNuuDf7QnwSjnWfBfA8gB9c8PnbAZwMRMivA/jlYHwXgH8CMAfHjf5WVb9b4fr/HcDXATwNtxlcevOX5hIWWwfQA/d9D8H9yB+Bq9C/5PpvB/AZADNwkWQ7AdypqisvzrRK1M03Ecj5w3Alhs8C2A/gXlU9UJcJXEIEHORBAJOq+l4z/mEAE6p6f7Dv6FTV371c81wO9fZa3gW3+44CeEBV/7RuN7+ECKyfjwJ4Fqzy+0G4fcNDcHuJ0wDeoqqTFS9yBaDuXkuPKxdr2jOIyJ0ickhEjl5E/fJYJ1g1ZwiMSIcB3AG3KdoP4B5Vff7Fm55HPbEWzvBiGJE8riCsxe9eyYj0soudkGrt0OZeV9sxZqKTUylTs9BYI4omQSSXo9U2Z/sC6dJpVSqlGDoW4+PGDd1gvoW44ZSFjO0qx2MiCZ6QMx9kTOukxRyjqXM5qx2Wlwqz/znS5FpqlShoM16t3qSlZ4bPjGsNYW9rWQw1GZFE5J0A3gkATT0DeMNHPgcA6O1n8cvde1nJLWLC06dM8c+hMydD+vTxw7xh0MQkChs+z+ppDaYyXFcX77Ohm8VHb+zmo/Sa+ssTz7CBb96sv4YtPHfILIAnhnj8cVMXYmiI8y2aRKKlRWtLGtla1/kCF1EhTzpS4GRi5npNcfbCSpjSSF/+0HtOoQasZTHUZERS1Y8hCPJo23Ktjp5zmlXEpJT1dbF5WWsruUSzmV6r+cJaonwz0hmXI5Ge45fS2MWF0d7CH25jI++5pZk0mwcAjaZGkrQynyKbMUU0TLpcZJ4/UtMc8zW68pyvxjmHfJE/ZDFop5Zq4DMnkobrFPgcpRLLADabvJGWBi6AjmbWi2o01/kyasNa9gz7AewSkW0ikgDwS3Ad7TzWKVbNGVS1ICLvhjPHLhmR1r018acZawrcVNWvAPhKrcfnsjmcPOwkianXje6GwZBODpJN93WRzpt6RXNxioT0nBM7E0M07G1Icj+yoZ+SbG+rybbuoJhImv1d0jQa6+5hHam5Ge4lhiY4+eg4/VHtU6xSG8lxvt1JZnYvFnhutujObWshe2/tSJljTYa1KQy+sX+DoXsMTbHWZsRtrQagdRX25nFp4ReDR4i6xvdHIoqWlNtNR/NsHjZ99umQjk5zpzxjOtCn5ykGpmfImlsijjVet31rOHbDZu7e93ST1TZMnAzpyfOm4IfRCEoZoymYJhMLcxQTk5MUB3Pm3EaTYd1qsrmTLRQ3qeYGM+5U3eZezreph6qwtbPAqJxNjSwf2NzUYMb5cyYjK3/PPWfwCOEXg0eI+rYlkhJaG5yYSJhOchlTF0lHyRpnCsYca3bTUVNsvG+DMxn1DpLV7mwzGomwsMbcEA1xI2dpH1uYY52lnCnYbSoPIm8MTQtplh4UU3cpZUzfbV3sp9HVwuq1Hc3UBDr6nCGpod+IlB6awGwL42zOtEgWM7Ec55IxYi1TtX15dXjO4BHCLwaPEPUVExFFW4NjfTEjJmKmVa8YVid52t17exhRvmETc2/6NzojTe8GsujFMz8O6eHDT4X07LGTIT1/9nxIF02F1qIRTWVl9UwdJRg6ajyIeVOPKlsyBivpCulIybhzCi6yfm6RRjeZoUh5/jRF3PERFhsvRShWipEGQ1N82n4atcJzBo8QfjF4hKiv0UkiaIg51q+mKWkuzV1zkynDt6GDGsL2TWSfO68hW41FXSFxSY+EY1NnGD8wduCJkC6NsLySTpHtRkomnkDN+2Hc7DZ4Jmqy+6ImtyYipmK40TgyMs3xIkViMeiBrfP8vNBGY9y5cRrGRmeNNpGkppKPcY5pE4uRXUX9Vc8ZPEL4xeARos5NTqNIiDOqLOa4DucmaOvv7ycL3Lt9V0hfu5vGmh07KUpOHz0EADh6gJlz55+jBjH5AkVGl1EIOkqVjTI2BlGEhq6IULOJRFJmnGFvAoqG3CLprGmHVDTxm4sZJzKys/S7LLQZLaeZYXpdgxST0TZGhmVj9GUsTPLa1khWKzxn8AhR56pkUSxFHLa1kAMM7iQH2LuFK33PHh7TFmWw6ezhb4T0eMAFRp5hXYv86HBIN5gAkbhW5gYl0+VFbXQyrAmcMYjJFOfV0kkPYm8fOVYmz83q2MzpkJ7JkGOMBM3bUDI9KIWfJ6OcVyLFn6qQoz2hYGwbcRO1nfzJqkPLwnMGjxB+MXiEqO8GUqKIJ5wY6Gqkd25vF+0G124ia942wE3Q/OkXQnrkmX8K6cmDrpbF3OGj4VjCbA6bjN3APqwtZ2V7aRYjPEqj3CgiRfOyNtO83LSB8Y0br+NzLJjgHRmlKFkcOhnSY6cCL2qWwTqRWbL9RtMPM5HiNeZjFEcwMZtiwulhTNO1YlnOICIPiMioiDxnxjpF5JsiciT4v+Ni1/BYH6hFTHwCruSexU9UMXuR5+VxGVBLv4lHRGTrBcNvAvCagH4QrlXR7y17s3gUXUG3+83dZHU3bueaHBSyzPjpsyE9/xyTu889yZ6UGjQJ26A2R9HO33gYjd0AJlimYMzLkiCrTbVSn483kflJg2ln3E7xId20C7S20TuZuP6GkG4+cSykO3ucjWToHANtzo9RvDSZfFCbLpc1No9CgeOTWWO+ztPsXStWu4FcroqZxzrEJdcmbPe6zOzU8id4XDasVpsYEZEBVR0OqpmNVjvQJt4O7t6nHb2OrXZ2kdV195oU+jF68IZPvGDo4yE9eZ4GnUSQqt9YphHA0OaPCO8JsyNPNtDQFW2mOGjsJsNLttPQFGtixlbrIM3k0V7SyU5eM9lErSSaolm5sSkoG9nE5ywqtaIYqEHkp01DNhOAM5OgCXrWiImZau2lL4LVcoYvwnWsA1bQuc7jykYtquVn4Goh7haRIRF5B4D7AdwhIkfgyvjcf2mn6VEP1KJN3FPlo0rlcy+KaCyKtiCZtaGFbK8U5ZocMR68g8dC0wZmR6hZLBZ/0qgUN3VC1FwvErNd7CkaIimKg2Q3d/6pHhqRGnqZ1NrcQ0NTa1eHGacoifeayr5Jo3EYLaZpgOKmoWe3m0vzlnCspXl7SA8dpY/lrCkEMjJNcXAeFAezYHbXIrzX0mMN8IvBI0RdfRMlLWE+71y080XazjNmGrmkCSIxMZClsSZzvKmtEISNR6M8L2q0A2ssau/hTr65jzv/2Gay6VgvDUfxJuMbaKRGkGrk3OMNnFckYXwGxqjlXPcOYoxHSyUn2jaamM6ETaSlmOpsYdBLZJqGudy8iak0butm435n4sDF4TmDRwi/GDxC1FVMKEooFN2Ot2A0gpzJXCrFyN5izTTuIEU2bQLSUQzEhMToR2hs3RbSLd2kN+zaHNLdO0ljC9m0dtG1bv0arA8OiE18NfUWbf3J8vfs4kmwDcaglTKu/Y4SRUaXEYOzpxnXOTtBLSNmEpI7rYGtRnjO4BHCLwaPEHUVE02xGF7a69hguyla2WcKcZ4fp29i4nna7OdNPYVEiSw7Ene7+WKCWkBb30tCeuPOl4Z04zXGELTJ0MYYVUpTBCyYcHc1xp140pQgTpqgWfNMEqm9PkLJdKAojPDZZk/RBzM+RNf37DhpLDIMv6OHxrN2K2JrhOcMHiH8YvAIUVcxEdci+hadkaTZFP5uSpClxtMmQmeUUT/RWVNw00QyNTY6dtjaTSNS29atId1+DW396DCFuU1NiOnzptSPuX/R+DvKErCM76O5g5FO3QPGT9Fgo6rMdebpVyjOunulT3AsfZJFQ9OjbFw3OXGEc5xnMf9SjD6I5hi/g0TTJQiI9fjpgV8MHiHqa3RazCJ3zLG+Qpsx7myi0SdVoEmpy2gNMRPwmjW2/s7ASLTpGu6k2/ZyJy27jIFomFXlFo6z8tvB5x/nIZOs89DcTXe2mvS6GVM4dMNmzr25kaIhbo5HgnPIjwzxOQ66nhRnDnPszDG66jVPTSFv6PkSfRNF01YgYYxkTVFfxsdjDfCLwSNEXcVEUQRzgWEmnjTpbTHSOWOsIWMEpo19P2frJgTthTp309eQ7OUOvxinsWjM1I4ePsbyPqPnmIcxM01RsjhDOhKn/6Bg0ti0he5yzZjiogUajBZnuPufMmmA4887DWFilP6FzCSfWpTiqGQqlJoMQCSVPoiYKVAaq2NArMdVCL8YPELUV0xEI5hscX6AmCmNnzP2/YUE6ck4DSdTxj2bL5J9FjudNtGynQYXtDDfIGdY5/Akd+3HzrGD0swMNYvFWVN5bZK79kSUUUdhvgOARJrGsOI0RUPGGIZmj/4opM8do/HozFGXC6K2lUBZaiA1AjWiMRGjtmRbNUZMremSKQpSK2oJld8kIt8RkYMickBE3hOM+0zsqwy1iIkCgPer6h4AtwF4l4jshc/EvupQS97EMIClJNu0iByE63a74kzsTLGIp2fcbnmzyTA2HQFQ7KV9v2ffTSG9cIxiYuwMWW1mSXwkTGRPmcGFWkjCdoTpYB7E7DhrLskijV7NSp9BY4m7/OQCDUO5Ixw/Mc08D83RL704S/f7fJrHxwtOhNmAKltTSoxxTaPGzR41Fd6KHJ88x3vmx0ydqBqxog1kkJp/M4AfwmdiX3WoeTGISDOAzwN4r6rOLne8OS/Mwp6fnl7+BI/Lhpq0CXHVMT8P4NOq+oVguKZMbJuF3b1jpx6ddmxSGsjedtnjTS/sRZNDkTWaxYIttLEUQGvFhLXKGNdEqcA/SmbnjVxlY03SpKulDCuPKkVJPssPxkZM47OSpcmy1agLS5X9rDJhQ3Bhioio0gdRUGpLCwVGbI2ZGtxp/P/tXX2MZWdZ/z33nPs5d2bnY2c/bEu3pCgFEmrS1CL8QZqSlIqhRiC0iDEhYgwoCCqhRq0GTAED+AeaNKFhCcSyAhJFEEkEKdFga1ErW1vabe1ud2Z353vmzp37dR7/OO89z+9s78ycmemcmVneX1I4+97z8Z47732e9/n6PbvgdBIRAfBZAI+r6ifpI1+JfYUhi2R4LYB3AnhMRPo8vPcgrrw+5aqynwPw1t2ZokdeyGJNfB/rJ/5vqRK70+ti2u0bJobNcdIix9DyvPnpf3TaMn2WLtqOPFXOEPTVBNH0kTURtU2kr0xZVfP8U0b+gSXLLipzK0k1Iowu7DiiEHLqi6F/aNpEoEN5wTB3A0jREKqpwzbFIGa79q6XeqYmLlCi7kq4deeyd0d7JPCLwSNBvkTihRBSdRlOZQsD98i/XiZavaPkgJKWieZ56lKf8Gh3SUbzIYnoUsv+UWuaGI94403nczMyvlGKWpD1xDpE5QwdMBbRaJedTqT6wiqx0h41+6s5bplWc6zjtp7o5CWDhyHfHlVhEUPjcXSxVLccyB6tyfqIuYxffsPLk+NiZFG45UXbTIoz0mmvlwbtzoYi25CN04aMcyozWecyWAIM+tVffr6yWHFXcIsDTs8vlc0XUzpkUdPida9MjkNq67hUss1yO9h6kyovGTwS+MXgkSBXNVEOirh2ImZEGyLROH3Ocg1HW5YsUqtQw/ARc8GWh018qnNHr66ZKO5coIbiF80VvDpDNnxkaiKiNgQRiXFWBpJyGaecxjaXDMf8r/5RJ6C5UzQXNXvniNoaoGoqozRim+xrj9m8jo6sq7TWhZcMHgn8YvBIkHMrQ6Dqdv/dplkH56ZNTTQooeRIaHv7LnWFKdeNsqftXLYzC6ZeGs/Y8coZuvclSv7o2b17EUUzSYwXBuz8gbRFoDJYHPMoWwvghuUur7FH+Z1t6j4jpBqCMXvngCyuUt38NUPDEY17NeGxA/jF4JEgVzXRba3h4hnXUWaNKHKWTXzPkJdojtLmpU1FrUPmjl1Zi8efee6ZZOzi40b/s/CkMaPVG0asWaG+k0qJKCkVsJ6aWOdYWB0UeJyY4iiXseC61WpoDrgONT2vjFI3m2NmQZSPUjSzbnM/N2dOp7kZX1HlsQP4xeCRIF9+hl4HnflYVPeISY2rmFbaJlJnKJbQ54gGgEpg9To6G4vG1a6pidV5S6Vvt55Ijrs9i3bW1Y4LYk6qAhX+BmwE0DF7/dMqwz4JQrtPSK2LI7H36Li6o16VCEqpWkuo9YGOWXr8XNvU3ex5ozp6eoHyMZvemvDYAfxi8EiQb3JL1IU0Y8shWqOuKU2rMlpZMlHbWDYHTaVoxyM1c8bMr8XXTlMHm6E1q3gaqlgGf4PT14kuqEhRiCI5hUKOU1A+e5fGexSniCgZplIk62fELIhOZLmfzU6sJjr1E8kYxl5lz5ww51KHOvc8d8lyQ89csnD+mVnKk1zZ+p82S6p8RUT+XUT+yxXe/okbv05EfuAKb78kIlvnmvPYV8iiJloAblXVVwO4EcDtInILgI8B+JQrvJ0H8K7dm6ZHHsiSKq8A+lvvovtPAdwK4G43fhLAvQD+aqN7dVodTD8d74SbLXOKLK5YmlKPyEK5s0uxYmJXh02sN8NYNHe48QA5q8rD5tApEjPaUMfO6SzbXDpNOxaKXygdt+lYyGooVu3rDIepl+UoxRt6Jvq14ywEajGgo3bdM4tWNjBLFtc08UzMr5qKDULrtDNJqikrMm0gRSRwBTQXAXwbwNMAFlS1/62cQ1yZ7XGAkWkxqGpPVW8EcDWAmwHcMOi0Qddy4W27ufUycY/8sKUtp6ouiMh3EZN2jIpI6KTD1QDOr3NNUnhbH5vUhQuxWFsl59J8g3z3JGrr4ybKIyrIRYUyg9waXKMwdI0qqnqBieiwaFZImXb1/e44ANDtmLrpkepRLraNzEkV0LwqNQsnh9TsrFBjNWFqQNvueIjY44bsnS8ummPszKI5muaJha7dtbmPH6ZSgOoucEeLyKSIjLrjKoDbADwO4DsA3uJO84W3VwCySIbjAE6KSIB48ZxS1a+LyGkAD4rIRwD8EHGltscBhqTDtLv8MJFLABoAZjY79wrBYeyPd71WVSc3OynXxQAAIvKIqt6U60P3CAftXX1swiPBFbcYROReEfnCHj37hIioiOQb83mRsBeL4f6d3kBE7na+ixURmRKRb4rI616MyWV49rMiclvG01PvKiLvdfNuicjnLvusJCJfdvdXEXn9izTlzMh9MTi/w7YhIh8A8GkAfwbgKICXAPhLxLyU+woD3vU8gI8AeGCdS74P4FcATK/z+a7iQKkJETkE4E8BvEdVv6qqDVXtqOrfq+rvrXPN34jItIgsisj3ROSV9NkdInJaRJZF5HkR+V03flhEvi4iCyIyJyIPicgLvivnpv9zEZkRkTMAfmGj+bs5fw3A7IDP2qr6aUebtPUS6hcBuS4GEbldRJ4QkadEZDv0wq8BUAHwt1u45puI2QWPAHgUwBfps88C+A1VHQbwKgD/7MY/iDjeMolY+tyDwe72XwfwJgB3AHgewMfd+G8BB49fO7fF4JxWnwHwRgCvAHCX46DeCiYAzFCAbFOo6gOquqyqLcSR1Vc7CQMAHQCvEJERVZ1X1Udp/Dhi+7yjqg/pYBv8bYhV1lkA7wPwS278Nw8iv3aekuFmAE+p6hmNHf0PYut6fhbA4ay7dSfG7xORp0VkCcCz7qN+rdovI/5V/5+I/IuIvMaNfwLAUwD+SUTObCDFfgrAWVWdcgup36vgf2H82ifd2EkAd2Z6yz1CnovhKsS/oD62E/b+NwBryP6l3o34D3IbgEMATrhxAQBVfVhV34xYhXwNwCk3vqyqH1TVlwL4RQAfEJFBNIdTAK6hf/dTm2/EAeTXznMxDOK+2ZL7U1UXAfwRgM+IyJ0iUhORooi8UUQ+PuCSYcSZWrMAaogtkHgysSn3DhE5pKodAEtwGzcReZOIXO/YcfvjgzZ1pwD8tohc7fYDf+DGP7Aev7aIVBDTbwUupTCkz8rucwAouc+zd1jfKVQ1l/8Qb/6+Rf/+MIAPb/Ne7wDwCOI4xzSAfwDw8+6zewF8wR3XEUdTlxGL8F9FvACvB1AC8I+IU/aWADwM4HXuut9BrFIaiCXYH9KznwVwmzsOAXwK8WJ7BsBpd//Qff4EgOPu+DjiOIVe9t+9l9378s9P5PU3yi024X4BTyJmlX0e8Zd/t6r+aMMLDwDcr/ckgDlVfT+NfwLArKre5/Yd46r6+3s1z82Qd9TyDsS77wDAA6r60dwevotw3s+HADwGI4a/B/G+4RTivcRzAN6qqnMDb7IPkHvU0mP/4kB5ID12FztaDC+CR9FjH2HbasJ5FJ8E8AbEO+6HAdylqqdfvOl55ImdxN0TjyIAiEjfo7juYgjDUIuuvVCWJZji6E6xg8sLzslijWdZ+GzWS8EEZ4HGmStyvVum+1BsPLnULdZhjpH0l7HpM5kqoLnamNEMaW87WQyDPIo/t9EFxWIJ1730egDpXkzco0nolQr0x4goaCgFSwMPXVp8WLA7FuiL6PEfkSqhoh6dH9i9AyLlZIb7EvfLWrNU+XZncJikHFB/KeqZFQ3wvXGjkl6Hutb2LD0/5PT/LpUW0IIpBrxgbV4/fORfraXvBtjJYsjkURSRdwN4NwCEVJnssf+wk8VwDmm//MBCGqUimmq1pup6S/S61D2O9rGDfjnAZRKDfu2h+1WzNGDxWqBfFLdgKIQ0TlJncoIItkaomegaFdd0zFWgoBpQem6XxF2R2GB61B2Pf+E2F7qOCnQ0otJ/DJYMva4OPCcrdmJNPAzgZRKX5pcAUVTS0gAAEPNJREFUvB1xRzuPA4ptSwZV7YrIewF8C+ZRPPCu5Z9k7CiLV1W/AeAbmc+H7XJ71LEuvdnm/s8sAmkzRSohKnQH3cTuQd3rOHOtQBu8asXqLkuhqYmpi43kuFaiBilUDzqzQmwwtCnt0mY1JX9pnkG/8x7n6tCxcqYdtW4KqTOdMtUxP3MbfYm8B9IjgV8MHglyLvZQdN1ump1IKWJ2ITFJTUHSPidSE/1dNvkkhJnbaVfN7PEhqaAyqYnFVbt2atpUTL1kX9WRo5bXWisTm33X2FWEfAfttr1TyM1FXNu8QAarF4lsLoXC4OMiMdJ3emahddpb58LwksEjgV8MHglyVhOS7KBZWkJNfCs1CpWwOHC8kHLCO7GaajxKu+11mlVLwRhUCmVzOz9/3iyIDkna1R77+m18mJhWViN2ibNjjFzJZEVFTm1F9P69jpGdFQNTAUGRe2Tb88mASTnjpLD1P62XDB4J/GLwSJB76XjflR4RSRb7i6Rg/IVRNDhWyyHkgtu1d8i5BBKRYcmijWVqjTgxaj2flufNIlidNzUhaiqg17Fnzs+ZnqjVTJSXaWffoOYqbYpHhBQhhdv9p+IIZAn1SO0IOd26FNdpp9QgR193iQfS4ycDfjF4JMjd6aROPXBCB+/sy0Wj0y1QK8N228Ruj1RCX5Owj14jtkjs6ZWiPQe0w58hvkWwRUAiWOlGay171sK8iewjExbyXm2ZA2q1aeeUKcYROJWg0WDnGqvDVpcKuiIOTw/OzArWabG4Ebxk8EjgF4NHgnx7VCnQ97lIKjfRvDvE1osgYmcN7abpGC5+UaTds7CzJjQq3mrZVFBj1ayGRosdPTavUsnEsYqJ6RY1YW+s0HjNrI9axaiJ19rGDh9FHCtJZmnvI+xcoxgMqVV2sIXcUyulbbb+O/eSwSNB7r2wC/0I3aDII4AWbQ6LZOdHZKtr9MJrhSrmy9QDol61TaME5nO4eNbSNYs9e05I0cnJSYtmCuVMnjtr1fZrbZvLxab9to6NWp+L1pptJpuUTW3vbfcIUn4De6dUxje5rzv8vZD02E45jJcMHgn8YvBIkO8GEmoROraVKVkjoAKZAhfOBEUaN1naj0oWi3ZuNdXpzlzQc4u2aWx1TWWwaB6u2/MnjtST4yiyTWZjhbrEzVoO5MoC3Z9aI40M232ac5Rm73wjAU1AwaKe3O6psCylzdP3qOQ7ibJzoNEzNoGIPCAiF0Xkf2jsQFHaeWRDFjXxOQC3XzZ2oCjtPLIhS/e674nIicuG3wzg9e74JIDvAvjQZvcSCIKkoortZhZ75HalpZqqR6Q8wcCpjGJo6qBaM0FVLJlFsLw0RTc0kVqumGoYH+OOeZxmb5eOHjYVsLxiPpLuGkU2F8hNfdT8G/WKnb/ci1UPqz1OfgHlgEbkDuc8So5ghkXyteTojj5QlHYe2bDrG8hU4W2Ye/qExxaw3b/OBRE5rqpTInIccb/LgeDC20qlov0CUq5u4jw+UWp4SqJRUhVFtpvvJ8CERVMTNeoGd/6iuYJbJMY5yaRet3sfOkTl/iE5t2i+9RE7Z3Tc5nJpyqKfqy2bO+dM1kpmWaw2YzXERbUBd5GmKKSCC3YpnZ6Ee8oFLRzZzIbtqom/Q9yxDvCd664YZDEt/xoxTe/PiMg5EXkXgPsAvEFEfoyYxue+3Z2mRx7IYk3ctc5Hg7iUN7tXsvvl1HdObU87VzhqBzqHnFSOFqhcIQcRJQYuLZlTiCutiiSNxyepOWmF0+yJ84GsnBKlrY+P2w5+YcGe1V61axeW7NqjRy0BZqgWn7+yYrGOgJxrqUQX+gK65Jji74UtMdGtt6zw7miPBH4xeCTIOTbB6d+S/qAPJsa6/OLkHBOlRedoqdRN/M6SWO51KS+QYgBjZAVUqhwSp57XDRP7/PwyVWDV6zbfiTELl19s27XNNZvDIjmjxsdiZ9Ray2IaEZVLReRQYmuCrQ/Oe+S0gJ4PYXvsBH4xeCTI3SWYOJvW0QGc6JPigaTzecddr8XqgWMds3OLdg/y75dLZkLUKVRdCEwELyxa6+qps0ZzWa5YvOPY0ZckxyMjZokcOUpxkBW758qivdUqscZVW/FL1SpmkTRWTb1oqmqYciMpVM3h/x59SdvpWeIlg0cCvxg8EuSeEJsIL9r5FsgZxDED5jVgh1GJsogqztk0N0sFsx1mdbPnjxyy8ZFRe/Xl1QvJ8VlSDVyQKwWLmXDWelC4OjkuDlkS7GFyZLWaVNhLBkroKIOOjpoKanWs2W1EzjWOOzAvdDoCQVaGbJ2N10sGjwR+MXgkyN3pZBlLFJvgfH/yr3PWT7HETiKLQ3QcJ8LCmqmJAoW+y0RTMEJxhLZaxtHMJYvAL89bjQMXbhXE5PvsrJ1fGTHVcNWwOb5GDtkcVsbNGTVzwZ7bdBZHq0pWzrDxRszNW8tspTg/h7BZTbCVFW2tSyQALxk8CH4xeCTYF3loLNBSWU/Es1AOTNQO1W33fX46rkOI2nZhkUrhDg1TMSzFESIlvgembu4wff86fNR0fqthYl8pbFypUJibkmxXKDbRck6n2QV75ti4WSEjQ5Q8u2xhbk21WyCy0FTBsWd789gB/GLwSJC/mujT7qR87VQFHZYGHleq5PdvmDheXYlFbEgMb5WaKZ4jnMVU4Gpvor/hSj/uisMsdKkiDjrs0Ek9Og5sjrWqvd/YuB1PT8cWyhrxPXTalMVFCbnMFx1Sh5qwQMSpdCw5d6LxuMLgF4NHgk3VhIhcA+DzAI4h9nHcr6p/ISLjAL4E4ASAZwG8TVXn17sPELuZgn5YmsR6QNlNRcpUrZFqGBqyErVpqnzuOVkeBhY7qI3Y/TqdS8nxwvPUk5wogprL5rBK9c/kJmgYnA3VWLGQ97lnzFIole09hkaPJccjo+Y8W1xadc+ncPeK3ePYMXNART1zdC01LNbRobzXItdZ9HahChtAF8AHVfUGALcAeI+IvAK++PaKw6aLQVWnVPVRd7wM4HHEDU7fjLjoFu7/79ytSXrkgy1ZE64a+2cB/ACXFd+KSIbiWyGmTa68ZreTrc+hEWse1qbE1tayOWNCF6odqpp4Hx0yFdBaNdVwYdqqsNu0g+fOspoyFXhalGxKCanNVSupU2oPEAxZ0mxAnW7GKFw9Pho7o6YortJuUSX3rIn6kUPmdFtq2jM5abZAf87eNmITmReDiNQBfAXA+1V1KWtaFRfebscr5pEfMlkTEmdKfAXAF1X1q274giu6xUbFt6p6v6repKo3BZxp4rHvkMWaEACfBfC4qn6SPuoX396HzMW3auFq4ksWourj8HSBnChTF8w33+uyAyYWh0OH7Lr6iInlwiFzOpXrRtS5TPxLi/PPJ8czs2RxEDhOwbxTI8NmKZy4zrpBR0VKTqWYQYHGh12dxcy8WUctqtheparxco2qwCkuv9w1ldGLqLZi4FtsjCxy+7UA3gngMRH5Tzd2D+JFcMoV4j4H4K3beL7HPkKWwtvvI53Bzthy8a3H/kXuDcug8SO5JiIkp1OJyCw6XVuD7TXaNdPeox+WnjhMMY0Kd5SnEHZomUhVihc0m+aYSpWrpWZOLK50SrlMc6d7Fmsc46CWzmQ5Vd3cJ6neYvqc6QluK7C6Zu83OWIWyWqrSefbd8R8UFnh3dEeCfxi8EiQe0JsX4AHVBNRqZqDZnTC/PFnnjW/P4eHi2XKIhqJRfNInZJByToJ2IdEdPwdjk8To2whpSZk4LiQnuBkKC1SCFmYp8nOibgyzjmyxihesbxkDrCFWRP7a8vUTrlkNxkeNsfc7Dx9X1uPYHvJ4GHIv6Iq4XomIs5DZv8vzpk/gSgOUrl+1SG7duxIHM0ssDTgpBT6FXeJFiggUtBixX7RpZr5JcboV1cs2zlz8+SLCJlSiPitKTEl1TuK2gZ0nXQqk/v88KRJyWaDGp0Tx8Psst3jyATnTJrPodH0yS0eO4BfDB4J8vUziCB03WBSLQuLZjfPz3JbQVur3C+KuZj7IrZAm0pmg0tt/GjTGJK4Hq4TUxzZ/Ne/9Kdp7javoWkm/KSOt8SzEBaIuDPFM2HjRbeJ7nF6/rjdb3nJVMbFKY5s2nt0u6aahqpVGicdmxFeMngk8IvBI0GuaqIgBZRdAe3EmFkQjbbtmhtNE6MlIgutDpktXqtbokdYdrt2yq9g1zF3jRUqyA1Cu8fo6NHkeOKIieZyxc4vBObKvoqKgBvLRDpaoAZj3P+cC4vJPR658jHurFuqmIobo0LhlUVLnGk27DtapPzJI5P2nVaK1E4hI7xk8EjgF4NHgnzVRCHAUC3mM5DAxPECtQEIlaKA5CYenTCLo1QxEd9txWI6IJXCTbzYLRwxLRAlqJSqJl45LaRNu3wyPtBVSlap2XGvQ3mSqTR7vjvlXvatG4ow8rl1yqMcqlp6fGPZ1GrTgpZYWrRJ1omFLiu8ZPBI4BeDR4J8YxOFAKVqvCufo/y+1TWOMrKYJitjkRjTGlS45VjjUm0yC5yGP5jyhsON3EuS2xpIygpghjW6NlW0S6pB08ohuZbUYJ/0k4t6U9YPt3nustqx76VHCUCNlt2npmbxZIWXDB4J/GLwSJAlVb4C4HsAyu78L6vqH4vIdQAeBDAO4FEA71TV9vp3inmjS46e/9w5YzKLOOODxGSPYgkXqBkYM332xWqB4tbs/2cmuZBjBOvwLEd0PjuD0udQI7UU7/Vg1cAqJt1vUuh/+/Oif6zDqc3P53Oa5pfC0srWa1SySIYWgFtV9dUAbgRwu4jcAuBjAD7lCm/nAbxry0/32FfIUnirqtr/WRbdfwrgVgBfduO+8PYKQCZrQmLi5v8AcD2AzwB4GsCCaiKPzyGuzN4QGimarpdjoW2iPBR2urCcHJyPyKxqyWhvnZxDngDJ4EJKBDN7GlsN5Lyi24RCMQiKd3BaZbrDPb1FqgLF9fhMcT7zyYOzldL344wqyplc21Bjb3rfdaGqPVW9EcDVAG4GcMOg0wZdKyLvFpFHROSRTrc16BSPfYItWROquoC4CfotAEbFwoBXAzi/zjVJ4W0x3Lrt65EfslgTkwA6qrogIlUAtyHePH4HwFsQWxSZCm8FPZRcoej4KIVyIxbTlKVEazWgrb2SVdDvyhKss6xTO3w6iamDlKyPMPUcuhG3KGYzg7KqIg6jc09Ong9nXrmAh6ZCINyAbHBvSnZMFZQdbHb+GnE+ZEWWPcNxACfdvqEA4JSqfl1ETgN4UEQ+AuCHiCu1PQ4wshTe/jditpbLx88g3j94XCGQtA99lx8mcglAA8DMZudeITiM/fGu16rq5GYn5boYAEBEHlHVm3J96B7hoL2rj014JPCLwSPBXiyG+/fgmXuFA/Wuue8ZPPYvvJrwSJDrYhCR20XkCRF5SkSuGK5pEblGRL4jIo+LyI9E5H1ufFxEvi0iP3b/P7bZvfYSuakJ58F8EsAbEEc5HwZwl6qezmUCuwhHinpcVR8VkWHEEd47AfwagDlVvc8t/jFV/dAeTnVD5CkZbgbwlKqecRlRDyImIz/wuFLI1vNcDFcBOEv/zpQDcdCwEdk6gAxk63uHPBfDIGLRK8qUuZxsfa/ns1XkuRjOAbiG/r1uDsRBxE7I1vcL8lwMDwN4mYhcJyIlAG9HTEZ+4JGBbB3ITLa+d8g7ankHgE8jzgh5QFU/mtvDdxEi8joADwF4DJbLcg/ifcMpAC+BI1tX1cG09fsA3gPpkcB7ID0S+MXgkcAvBo8EfjF4JPCLwSOBXwweCfxi8EjgF4NHgv8H1kXE4FW1+P0AAAAASUVORK5CYII=\n&quot;, 
+      &quot;text/plain&quot;: [ 
+       &quot;&lt;Figure size 1440x720 with 5 Axes&gt;&quot; 
+      ] 
+     }, 
+     &quot;metadata&quot;: {}, 
+     &quot;output_type&quot;: &quot;display_data&quot; 
+    } 
+   ], 
+   &quot;source&quot;: [ 
+    &quot;### Load the images and plot them here.\n&quot;, 
+    &quot;### Feel free to use as many code cells as needed.\n&quot;, 
+    &quot;\n&quot;, 
+    &quot;# Data source:\n&quot;, 
+    &quot;# Test data set at: http://benchmark.ini.rub.de/?section=gtsrb&amp;subsection=dataset\n&quot;, 
+    &quot;test_image_directory = \&quot;GTSRB_Final_Test_Images\\GTSRB\\Final_Test\\Images\&quot;\n&quot;, 
+    &quot;test_image_index_file = \&quot;GT-final_test.csv\&quot;\n&quot;, 
+    &quot;\n&quot;, 
+    &quot;import pandas as pd\n&quot;, 
+    &quot;import imageio\n&quot;, 
+    &quot;\n&quot;, 
+    &quot;def load_test_iamges(test_image_directory, index_file , num_samples=5):\n&quot;, 
+    &quot;    \&quot;\&quot;\&quot;\n&quot;, 
+    &quot;    Given a test image directory, return a list of test samples\n&quot;, 
+    &quot;    :param test_image_directory: \n&quot;, 
+    &quot;    :return: \n&quot;, 
+    &quot;    \&quot;\&quot;\&quot;\n&quot;, 
+    &quot;    index_file_full = os.path.join(test_image_directory, index_file)\n&quot;, 
+    &quot;    index = pd.read_csv(index_file_full, delimiter=';')   \n&quot;, 
+    &quot;    \n&quot;, 
+    &quot;    if num_samples &lt; len(index):\n&quot;, 
+    &quot;        index = index.head(num_samples)\n&quot;, 
+    &quot;    \n&quot;, 
+    &quot;    print(index)\n&quot;, 
+    &quot;    shape = list(imageio.imread(os.path.join(test_image_directory, index['Filename'][0])).shape)\n&quot;, 
+    &quot;    print(shape)\n&quot;, 
+    &quot;    shape = [32,32,3]\n&quot;, 
+    &quot;    images = np.zeros([len(index)]+shape, dtype=np.uint8)\n&quot;, 
+    &quot;    classes = np.zeros(len(index), dtype=np.uint8)\n&quot;, 
+    &quot;    \n&quot;, 
+    &quot;    for i, row in index.iterrows():\n&quot;, 
+    &quot;        image = cv2.imread(os.path.join(test_image_directory, row['Filename']) )\n&quot;, 
+    &quot;        image_label_section = image[row['Roi.Y1']:row['Roi.Y2'],row['Roi.X1']:row['Roi.X2'],:]\n&quot;, 
+    &quot;        image_resized = cv2.resize(image_label_section, (32,32))\n&quot;, 
+    &quot;        print(image_resized[0,0,0])\n&quot;, 
+    &quot;            \n&quot;, 
+    &quot;        images[i] = np.array(image_resized.astype(np.float32))\n&quot;, 
+    &quot;        \n&quot;, 
+    &quot;        classes[i] = (row['ClassId'])\n&quot;, 
+    &quot;    \n&quot;, 
+    &quot;    return images, classes\n&quot;, 
+    &quot;\n&quot;, 
+    &quot;prediction_images, labelled_classes = load_test_iamges(test_image_directory, test_image_index_file, num_samples=5)\n&quot;, 
+    &quot;\n&quot;, 
+    &quot;def visualize_images(images, classes):\n&quot;, 
+    &quot;    %matplotlib inline\n&quot;, 
+    &quot;\n&quot;, 
+    &quot;    rows = len(images)\n&quot;, 
+    &quot;    cols = 1\n&quot;, 
+    &quot;\n&quot;, 
+    &quot;    fig = plt.figure(figsize=(20,10))\n&quot;, 
+    &quot;    ax = []\n&quot;, 
+    &quot;    for i, image in enumerate(images):\n&quot;, 
+    &quot;        ax.append(fig.add_subplot(rows, cols, i+1))\n&quot;, 
+    &quot;        ax[-1].set_title(\&quot;ClassId \&quot;+ str(classes[i]))\n&quot;, 
+    &quot;        plt.imshow(image)\n&quot;, 
+    &quot;    \n&quot;, 
+    &quot;\n&quot;, 
+    &quot;visualize_images(prediction_images, labelled_classes)&quot; 
+   ] 
+  }, 
+  { 
+   &quot;cell_type&quot;: &quot;markdown&quot;, 
+   &quot;metadata&quot;: {}, 
+   &quot;source&quot;: [ 
+    &quot;### Predict the Sign Type for Each Image&quot; 
+   ] 
+  }, 
+  { 
+   &quot;cell_type&quot;: &quot;code&quot;, 
+   &quot;execution_count&quot;: 134, 
+   &quot;metadata&quot;: { 
+    &quot;collapsed&quot;: true 
+   }, 
+   &quot;outputs&quot;: [ 
+    { 
+     &quot;name&quot;: &quot;stdout&quot;, 
+     &quot;output_type&quot;: &quot;stream&quot;, 
+     &quot;text&quot;: [ 
+      &quot;tensor_name:  Variable\n[[[[-0.36677697 -0.32668293  0.09529665 -0.07769124  0.2670127\n     0.06265961]]\n\n  [[-0.3251997  -0.382412    0.38648173 -0.07218984 -0.00682714\n     0.18139447]]\n\n  [[ 0.03066764 -0.3983015   0.50443244 -0.03973335 -0.20236617\n     0.07585685]]\n\n  [[ 0.15222853 -0.45212406  0.5250169  -0.04094039  0.19360721\n    -0.1285037 ]]\n\n  [[ 0.1645946  -0.1925984   0.3952464  -0.07854181  0.1670997\n    -0.24651846]]]\n\n\n [[[-0.46503785 -0.18572728 -0.26541072  0.11874276  0.23967697\n     0.20182844]]\n\n  [[-0.32919616 -0.16963284 -0.13626142  0.38657677  0.16862564\n     0.5070099 ]]\n\n  [[-0.15931231 -0.1902123   0.36517113  0.2721278   0.05624085\n     0.13503627]]\n\n  [[ 0.3925753  -0.3591264   0.48174775  0.07155925  0.20733325\n    -0.33090246]]\n\n  [[ 0.2956533  -0.3891904   0.37294382 -0.21460417  0.32574126\n    -0.33793327]]]\n\n\n [[[-0.3122143  -0.08657572 -0.25796926  0.1099536  -0.01134595\n     0.31562948]]\n\n  [[-0.11226461  0.20413621 -0.31269953  0.49641094 -0.1853345\n     0.5130004 ]]\n\n  [[ 0.1029467   0.42382726 -0.04845479  0.4968169   0.12710682\n     0.33586937]]\n\n  [[ 0.29482016  0.22125107  0.02706354  0.17649144  0.5402016\n    -0.32478014]]\n\n  [[ 0.42731503 -0.13369864 -0.11452769 -0.22626385  0.49932253\n    -0.45215002]]]\n\n\n [[[-0.20113678  0.08227652  0.01588661  0.09182309 -0.40929732\n     0.16819027]]\n\n  [[-0.17685615  0.5819316  -0.02727117  0.28193492 -0.5888541\n     0.27829114]]\n\n  [[ 0.09250165  0.62539285 -0.40546903  0.33290502 -0.45028165\n     0.07097019]]\n\n  [[ 0.14929277  0.5646581  -0.4599114  -0.02517647  0.0804484\n    -0.16728525]]\n\n  [[ 0.41197222 -0.05973561 -0.31397212 -0.21300311  0.31465706\n    -0.2087332 ]]]\n\n\n [[[-0.25319993  0.05636713  0.16990356 -0.12012958 -0.00208132\n    -0.05496538]]\n\n  [[ 0.06506958  0.3246722   0.10653023 -0.17897613 -0.2553148\n     0.04585316]]\n\n  [[ 0.03892807  0.457151   -0.25831056  0.02739407 -0.4052541\n    -0.09196749]]\n\n  [[ 0.07699599  0.41814685 -0.47156718 -0.21801908 -0.447617\n    -0.06594467]]\n\n  [[ 0.14128593 -0.08573472 -0.376002   -0.22951125  0.03221675\n    -0.22252044]]]]\ntensor_name:  Variable/Adam\n[[[[ 0.00117584 -0.02535878  0.02510481 -0.00932451  0.01248627\n    -0.02203713]]\n\n  [[ 0.00367419 -0.02852924  0.02450698 -0.01336681  0.01131097\n    -0.021124  ]]\n\n  [[ 0.00041934 -0.02921886  0.02896271 -0.01177655  0.00918565\n    -0.01807379]]\n\n  [[-0.00056893 -0.02734937  0.03180677 -0.01420096  0.01033648\n    -0.02045522]]\n\n  [[ 0.00316322 -0.02360366  0.0340146  -0.01648024  0.00971994\n    -0.02398759]]]\n\n\n [[[ 0.00170078 -0.02372308  0.03394465 -0.00358042  0.01278451\n    -0.02040553]]\n\n  [[ 0.00267127 -0.02723383  0.0337717  -0.00592491  0.01002206\n    -0.01978351]]\n\n  [[ 0.00032366 -0.02885474  0.0313852  -0.00761956  0.00984525\n    -0.01893941]]\n\n  [[ 0.00415655 -0.02604643  0.032881   -0.00904678  0.01046553\n    -0.01809033]]\n\n  [[ 0.00736615 -0.02317237  0.04015678 -0.01177932  0.00949527\n    -0.01756081]]]\n\n\n [[[-0.00059024 -0.02692152  0.03479609 -0.00462188  0.0095701\n    -0.0214564 ]]\n\n  [[-0.00283801 -0.02931958  0.03210625 -0.00784003  0.00906931\n    -0.02054871]]\n\n  [[-0.00343792 -0.02668835  0.02835406 -0.00970738  0.01091269\n    -0.02017084]]\n\n  [[-0.00197916 -0.02501614  0.03329495 -0.01339982  0.00845376\n    -0.01906599]]\n\n  [[ 0.00281764 -0.02462668  0.04374811 -0.01280283  0.00679978\n    -0.01949814]]]\n\n\n [[[-0.00355149 -0.02291823  0.03882072 -0.00534226  0.00306949\n    -0.02490638]]\n\n  [[-0.00141285 -0.02323993  0.03783317 -0.00895553  0.00580057\n    -0.02382705]]\n\n  [[-0.00066446 -0.0248316   0.03194803 -0.0096644   0.00473182\n    -0.02116541]]\n\n  [[-0.00193671 -0.02660256  0.03176326 -0.01302155  0.00454946\n    -0.02151524]]\n\n  [[-0.0011985  -0.0275307   0.03616177 -0.01101044  0.00603378\n    -0.01830396]]]\n\n\n [[[-0.00584637 -0.02118064  0.04475214 -0.00514495  0.00531939\n    -0.02627406]]\n\n  [[-0.00397463 -0.02383114  0.04497633 -0.00879199  0.00487659\n    -0.02321512]]\n\n  [[-0.00314448 -0.02394829  0.0375482  -0.0091415  -0.00195436\n    -0.02059793]]\n\n  [[-0.00176428 -0.0255432   0.03636701 -0.01017995  0.00175145\n    -0.02213621]]\n\n  [[-0.00030875 -0.02412437  0.03748409 -0.0093976   0.00728431\n    -0.02136322]]]]\ntensor_name:  Variable/Adam_1\n[[[[0.0055213  0.00125123 0.00474818 0.00096792 0.00232016 0.00204309]]\n\n  [[0.00581348 0.00124452 0.00502956 0.00106327 0.00227203 0.00217209]]\n\n  [[0.00588547 0.00125765 0.0052583  0.00113131 0.0021265  0.00213283]]\n\n  [[0.00580337 0.00123655 0.00539952 0.00120325 0.0022243  0.0019929 ]]\n\n  [[0.00579658 0.00125951 0.00542999 0.00123366 0.00246953 0.00187669]]]\n\n\n [[[0.00550788 0.00128734 0.00473482 0.00097879 0.00224379 0.00207443]]\n\n  [[0.00569925 0.00128067 0.00517441 0.00102263 0.00224814 0.00217921]]\n\n  [[0.00580292 0.00125432 0.00534932 0.00111971 0.002124   0.0020485 ]]\n\n  [[0.00586089 0.0012269  0.00530079 0.00118542 0.0022587  0.00187152]]\n\n  [[0.0058938  0.00129199 0.00534971 0.00120036 0.00243214 0.00177993]]]\n\n\n [[[0.00537752 0.00130298 0.00463875 0.00100734 0.00222874 0.00214258]]\n\n  [[0.0055101  0.00134755 0.00521507 0.00103833 0.00227459 0.00220228]]\n\n  [[0.00563055 0.00136341 0.0054151  0.001084   0.00218205 0.00204081]]\n\n  [[0.00567829 0.00128616 0.00526819 0.00108107 0.00237506 0.00183883]]\n\n  [[0.00582985 0.00128889 0.00528844 0.00115119 0.00237783 0.0017985 ]]]\n\n\n [[[0.00506604 0.00125553 0.00457712 0.00104335 0.00216583 0.00224944]]\n\n  [[0.005236   0.00135311 0.00519749 0.00102178 0.0022346  0.00224304]]\n\n  [[0.00526881 0.00137608 0.00528533 0.001052   0.00234595 0.00209564]]\n\n  [[0.00543736 0.00134465 0.00489595 0.00105436 0.00243331 0.0019468 ]]\n\n  [[0.00569209 0.00136165 0.00489843 0.00116808 0.00239535 0.00191914]]]\n\n\n [[[0.00482892 0.00120484 0.00457332 0.00111101 0.00225357 0.00234339]]\n\n  [[0.00503141 0.0013057  0.00518315 0.00114592 0.00235518 0.00231546]]\n\n  [[0.00511873 0.0013589  0.00526408 0.00114866 0.00253947 0.00218223]]\n\n  [[0.00516458 0.00139126 0.00487298 0.00114517 0.00249899 0.0021104 ]]\n\n  [[0.00528492 0.00142926 0.00485008 0.00120903 0.00250239 0.00208077]]]]\ntensor_name:  Variable_1\n[ 0.01013126 -0.03498545  0.0573456  -0.2970349  -0.01990296 -0.07341252]\ntensor_name:  Variable_1/Adam\n[ 0.00558216 -0.02514032  0.03602891 -0.00195278  0.01738312 -0.02391357]\ntensor_name:  Variable_1/Adam_1\n[0.00844003 0.00234113 0.00829123 0.001594   0.00396796 0.00295878]\ntensor_name:  Variable_2\n[[[[ 1.25479847e-02 -8.78821090e-02  9.35820490e-03 ...  1.58814475e-01\n     1.09083645e-01  1.05912119e-01]\n   [ 1.83305264e-01  6.12742938e-02 -2.32283264e-01 ... -8.76635835e-02\n     3.27137053e-01 -1.30918413e-01]\n   [-4.36244249e-01  4.63369563e-02  4.30021971e-01 ...  1.27859995e-01\n    -5.13245046e-01 -8.62754807e-02]\n   [-1.58273391e-02  3.91434431e-02 -1.05138496e-01 ... -7.19796941e-02\n     3.37619215e-01  6.26782626e-02]\n   [-3.27541739e-01 -4.08710837e-01  3.32577005e-02 ...  1.97693214e-01\n    -5.26816845e-01  1.79718807e-01]\n   [-6.27745017e-02  1.73194669e-02  8.45008716e-02 ... -7.78288990e-02\n     1.23138823e-01 -1.61839321e-01]]\n\n  [[ 3.20292085e-01 -2.40368843e-02 -1.71246439e-01 ... -3.61225039e-01\n    -3.84188741e-01  1.41147943e-02]\n   [ 1.00704141e-01  9.89402737e-03 -2.81661004e-01 ... -2.15392113e-01\n    -2.12157723e-02  3.00568528e-02]\n   [ 1.17770478e-01  1.91640437e-01 -1.17659755e-01 ... -5.43222539e-02\n     2.74025023e-01  8.20437446e-03]\n   [ 2.75504053e-01 -1.08284555e-01 -1.54604957e-01 ...  1.63830578e-01\n     3.70148540e-01 -9.37754195e-03]\n   [-9.06238258e-02 -1.40502214e-01  1.89809144e-01 ...  2.70838022e-01\n    -5.40565252e-01  2.27597609e-01]\n   [ 5.21647967e-02 -7.76444077e-02 -1.20333903e-01 ...  1.00111673e-02\n     3.20806742e-01 -1.17047932e-02]]\n\n  [[-2.57248551e-01  2.78410524e-01 -1.71713874e-01 ...  5.23224995e-02\n    -3.38767737e-01  5.34092411e-02]\n   [ 1.36840552e-01  4.56398651e-02 -8.31444189e-02 ...  9.10722930e-03\n    -4.03696656e-01  2.40063161e-01]\n   [ 2.81728238e-01  1.71791539e-01 -2.29379177e-01 ... -3.06458473e-01\n     6.50732219e-02 -2.29012296e-01]\n   [ 2.22735494e-01 -1.79962143e-02 -9.73369107e-02 ... -1.68343678e-01\n     7.27021545e-02  3.28213811e-01]\n   [-2.37657249e-01  1.65568113e-01  6.29331023e-02 ...  2.73974866e-01\n     2.80203968e-01  5.35379536e-02]\n   [ 2.88160920e-01 -2.35147506e-01  3.05493828e-03 ... -9.99243855e-02\n     6.08658493e-02  2.27022648e-01]]\n\n  [[-2.41264284e-01  5.13204839e-03 -1.41700864e-01 ...  2.12421373e-01\n    -2.21268997e-01 -4.99818414e-01]\n   [-1.95720151e-01 -3.08043640e-02 -1.81029867e-02 ...  9.59404409e-02\n    -8.20065290e-02  2.10889637e-01]\n   [-2.76919454e-01 -1.26668796e-01 -6.56847134e-02 ... -1.03296772e-01\n    -2.00322688e-01 -3.71583909e-01]\n   [ 2.38507595e-02  5.45436256e-02 -9.53352004e-02 ... -3.59252505e-02\n     1.18432693e-01  2.26890028e-01]\n   [ 3.26041341e-01  5.12869656e-01 -5.70088699e-02 ...  1.95471779e-01\n    -2.11971179e-01 -3.53754163e-02]\n   [-1.11296125e-01 -6.28868043e-02  1.47861585e-01 ...  3.75544727e-02\n     1.82484731e-01  1.45259306e-01]]\n\n  [[ 2.91749574e-02  1.05158091e-01  4.76260632e-01 ...  2.83826023e-01\n    -2.20166281e-01 -1.34981900e-01]\n   [ 1.64819852e-01  1.57530025e-01  4.02629338e-02 ...  4.67558876e-02\n     9.25006866e-02  1.00616790e-01]\n   [-2.40389295e-02 -2.90177554e-01 -3.30811709e-01 ... -1.04731999e-01\n     1.61237389e-01  7.22382963e-02]\n   [-3.72268334e-02 -7.26727536e-03 -1.56728551e-01 ...  1.78213984e-01\n     2.34920204e-01  8.83639753e-02]\n   [-2.45900512e-01  8.73483643e-02  3.34050745e-01 ...  2.46564358e-01\n    -1.30821779e-01 -3.73161472e-02]\n   [ 5.04490174e-03  1.41637057e-01 -9.18807536e-02 ...  1.87974442e-02\n     1.44159302e-01 -1.09008476e-01]]]\n\n\n [[[ 1.12816632e-01  1.31617680e-01 -1.17539570e-01 ...  2.87435646e-03\n     2.22744748e-01  5.23873568e-02]\n   [-1.22206576e-01 -4.10932153e-01 -2.45272994e-01 ... -1.09103061e-01\n    -9.98991579e-02 -1.64598495e-01]\n   [-7.53124803e-02 -1.03541166e-01 -1.05534293e-01 ...  2.04425871e-01\n     2.39358753e-01  2.17651039e-01]\n   [ 8.84622410e-02  9.27931536e-03 -2.67684460e-01 ...  1.30326211e-01\n     1.66063905e-01  2.16649584e-02]\n   [-8.11901912e-02 -9.31143090e-02 -3.59230548e-01 ... -1.27748370e-01\n    -7.32442811e-02  1.29315972e-01]\n   [-1.39723029e-02  1.71776667e-01 -2.95010030e-01 ...  7.28002340e-02\n     1.46715730e-01 -1.47826716e-01]]\n\n  [[ 5.82896061e-02 -2.00355366e-01  2.01189548e-01 ...  1.24055378e-01\n    -8.45132470e-01 -3.41392487e-01]\n   [-3.69716361e-02 -1.16695754e-01 -6.44663125e-02 ... -2.40382984e-01\n    -8.08956549e-02 -3.28088969e-01]\n   [ 2.62012422e-01  2.14763373e-01 -1.96695149e-01 ...  2.54195362e-01\n    -3.45956162e-02  3.54312897e-01]\n   [ 6.62620887e-02 -1.03462890e-01 -2.57202238e-01 ... -2.10459173e-01\n     4.06536043e-01 -4.56264131e-02]\n   [-1.52391851e-01 -4.29125011e-01 -1.33924991e-01 ...  2.69873381e-01\n    -4.34750617e-01  2.79465586e-01]\n   [ 2.93346971e-01 -1.13545559e-01 -4.30579484e-01 ... -1.90378383e-01\n     4.27671850e-01 -2.81331569e-01]]\n\n  [[-4.63243872e-01  2.52417978e-02  2.71316826e-01 ...  2.22912598e-02\n    -2.95350283e-01 -2.30465621e-01]\n   [-1.48730621e-01 -3.43493104e-01  4.42616567e-02 ...  1.44949123e-01\n    -1.43858492e-01 -1.33464262e-01]\n   [ 3.04286741e-02  2.11447373e-01 -5.49104393e-01 ... -2.80950308e-01\n    -4.75623876e-01  4.28887695e-01]\n   [ 6.91866204e-02 -3.70612592e-01 -1.73621073e-01 ...  1.34583518e-01\n    -2.13500291e-01  3.92569378e-02]\n   [-1.98844075e-01 -1.66815996e-01 -1.94312140e-01 ...  1.90940946e-01\n     5.93193546e-02  3.38113755e-01]\n   [ 2.80589640e-01 -3.28352064e-01 -1.66122183e-01 ... -5.57711497e-02\n    -9.05837640e-02 -6.09985031e-02]]\n\n  [[ 4.68137890e-01  2.94709176e-01  1.88679695e-01 ...  1.70298412e-01\n     1.95264533e-01 -2.49672905e-01]\n   [-3.10560614e-01 -2.21515179e-01  9.13572907e-02 ...  1.65736175e-03\n    -3.84003073e-02  3.01963463e-02]\n   [-2.96788394e-01  1.60685450e-01 -3.17544222e-01 ... -1.77843258e-01\n    -2.46508986e-01  5.93065470e-02]\n   [-2.14120582e-01 -2.72675067e-01  6.68381378e-02 ...  1.62608296e-01\n     5.68843447e-02  3.58413398e-01]\n   [ 2.57586002e-01  5.48713654e-02 -6.78869188e-01 ... -8.17373544e-02\n    -1.31436542e-01  2.58816808e-01]\n   [-2.29657084e-01 -2.90993124e-01  7.04241917e-02 ...  1.24922074e-01\n    -7.99759626e-02  1.84326142e-01]]\n\n  [[ 3.61031145e-01  2.64704943e-01  3.85533065e-01 ... -3.35251130e-02\n    -8.54524225e-02 -2.21787646e-01]\n   [ 2.68955380e-01 -8.89159217e-02  2.66957223e-01 ...  9.17204097e-03\n     7.78046027e-02  1.25919342e-01]\n   [-2.08262533e-01  2.15188518e-01  6.61003077e-03 ... -3.81443799e-02\n    -3.85795861e-01 -2.87387371e-01]\n   [ 8.65368396e-02 -1.31647766e-01  6.84947297e-02 ...  2.54041374e-01\n     9.90292355e-02  2.57064939e-01]\n   [-7.57500827e-02  3.29274356e-01 -3.06149662e-01 ... -2.41371751e-01\n     1.76900458e-02  1.15656182e-01]\n   [ 1.48114055e-01 -1.92276314e-02 -1.28985450e-01 ...  1.21324651e-01\n     2.81186514e-02  1.96434721e-01]]]\n\n\n [[[ 6.13393774e-03  8.83953869e-02  2.04349801e-01 ... -2.78326452e-01\n     3.67006995e-02 -6.60566390e-02]\n   [-1.05270833e-01  5.90259731e-02  3.53202730e-01 ... -2.07552910e-01\n    -5.31518400e-01 -3.60400677e-01]\n   [-7.00991303e-02  5.55970520e-02 -9.97868955e-01 ... -5.10992885e-01\n     6.94639862e-01  8.08067247e-02]\n   [-1.24712437e-01 -1.51329618e-02  8.33369270e-02 ... -2.72466034e-01\n     3.31456900e-01 -2.88591683e-01]\n   [ 6.89059775e-03 -2.82101542e-01 -1.30932719e-01 ... -1.17915459e-01\n     2.39479527e-01 -5.80138676e-02]\n   [-1.41518116e-01 -4.25166562e-02 -2.88156658e-01 ... -1.33571461e-01\n     1.39721334e-01  7.04792142e-03]]\n\n  [[-4.30403292e-01 -4.53570932e-01  1.88826606e-01 ...  1.34742698e-02\n    -8.25309932e-01 -3.67479265e-01]\n   [ 3.51092988e-03 -7.56533220e-02  3.86862487e-01 ... -1.15186371e-01\n    -4.78969902e-01 -4.48690742e-01]\n   [ 2.34641403e-01 -2.33014151e-01 -6.89099908e-01 ...  2.01067224e-01\n    -1.27411515e-01 -3.97754423e-02]\n   [ 1.53570017e-02 -3.90816592e-02 -5.17357215e-02 ... -2.95565665e-01\n     1.61666527e-01 -1.76178157e-01]\n   [-2.37642303e-01 -8.56941715e-02 -1.85293511e-01 ... -7.10792840e-02\n     3.69295865e-01 -1.16848990e-01]\n   [ 2.36736715e-01  1.19459126e-02  1.50755093e-01 ... -3.75000656e-01\n     1.77641779e-01 -1.07497294e-02]]\n\n  [[-8.12291324e-01  2.95528919e-01  3.85807037e-01 ... -7.05757216e-02\n     1.18132584e-01  4.64278124e-02]\n   [ 6.85126474e-03 -2.49879854e-03  3.18127096e-01 ... -1.64196908e-01\n    -1.88780501e-01 -3.99170578e-01]\n   [-4.00447398e-01 -1.04695857e+00 -3.90954554e-01 ...  5.04100502e-01\n    -3.63723338e-01  3.69905233e-02]\n   [ 1.48286028e-02 -1.55003473e-01  1.71923861e-01 ... -2.50489295e-01\n    -8.43509808e-02 -1.26366854e-01]\n   [ 1.64915696e-01 -1.02940947e-01  9.10600200e-02 ...  3.87242109e-01\n     3.66113961e-01 -1.00142844e-01]\n   [ 5.37025370e-02 -5.01555502e-01  2.93596964e-02 ... -3.15842897e-01\n    -3.58765423e-01 -2.28801697e-01]]\n\n  [[ 4.04705226e-01  2.38320544e-01 -2.26666182e-01 ... -5.75859733e-02\n    -9.55575407e-02  1.22651428e-01]\n   [-1.59002632e-01  5.45934319e-01  3.88243616e-01 ... -3.66744936e-01\n     2.90455408e-02 -1.04231410e-01]\n   [-3.26481372e-01 -8.16688359e-01  2.72810221e-01 ... -1.56424075e-01\n    -1.78280905e-01  6.84228912e-02]\n   [-7.57535025e-02  7.25367516e-02  1.74604267e-01 ... -1.30315825e-01\n    -2.74103656e-02 -2.49364004e-02]\n   [ 3.00253212e-01 -3.27238500e-01 -9.16344225e-02 ...  5.98847806e-01\n    -6.37750998e-02  1.84816837e-01]\n   [-5.02381384e-01 -2.70338535e-01  1.07183568e-01 ... -2.64210373e-01\n    -1.30411831e-03 -1.26663661e-02]]\n\n  [[ 3.94207776e-01 -5.96826114e-02 -3.88456106e-01 ... -2.53643561e-02\n    -1.14025123e-01  1.48979515e-01]\n   [ 7.52031282e-02  2.35802859e-01  1.35731727e-01 ...  6.94620237e-02\n    -8.70555639e-02  1.76925406e-01]\n   [-8.03795904e-02 -1.80301070e-01  2.33936618e-04 ... -3.21326673e-01\n    -1.68977425e-01 -2.71190107e-01]\n   [ 8.07919204e-02  3.06897424e-02  2.91932970e-01 ...  1.90522730e-01\n     4.59950566e-02  1.76586285e-02]\n   [-6.75072446e-02 -5.02525985e-01  9.48507115e-02 ...  1.06880218e-01\n     1.81646971e-03  6.39819447e-03]\n   [ 1.62910730e-01  6.91554695e-03  1.28614744e-02 ...  2.65695108e-03\n    -1.83080137e-02  4.38632779e-02]]]\n\n\n [[[-2.70575229e-02 -1.13225440e-02  2.67115742e-01 ... -1.83974691e-02\n    -1.83290079e-01  4.61430103e-03]\n   [ 1.29853934e-02  3.78751494e-02  2.57348299e-01 ...  4.56108332e-01\n    -3.45660187e-02 -1.98833659e-01]\n   [ 2.19168961e-01 -5.87202311e-02  1.63343530e-02 ... -9.85337377e-01\n    -7.67996442e-03 -1.86031923e-01]\n   [-9.54717100e-02  1.02009378e-01  1.05372876e-01 ... -6.08378835e-02\n    -1.69167981e-01 -1.01595707e-01]\n   [ 4.36479039e-02  1.62341058e-01  9.39302146e-02 ... -3.01301390e-01\n    -1.31676093e-01 -1.76790044e-01]\n   [-3.50011475e-02  1.88003793e-01 -5.17284460e-02 ... -6.00543991e-02\n    -4.42118682e-02 -2.61603206e-01]]\n\n  [[-2.79975295e-01 -1.17143527e-01 -2.67600536e-01 ...  6.68372735e-02\n    -7.36144409e-02 -7.17926323e-02]\n   [ 2.29857489e-02 -3.70213427e-02 -5.08909971e-02 ...  4.81835902e-01\n    -1.19868167e-01 -2.35443056e-01]\n   [-4.03740406e-02  1.11482173e-01  3.45884442e-01 ... -4.16668475e-01\n    -3.38507205e-01  6.82559982e-02]\n   [ 5.80378547e-02 -1.33283421e-01  1.76943198e-01 ...  1.99163780e-01\n    -3.58062893e-01 -1.84038356e-01]\n   [-1.17463972e-02  2.99507618e-01  1.52138963e-01 ... -5.29131234e-01\n    -2.25172997e-01 -1.91333503e-01]\n   [-5.29661439e-02  1.44075966e-02 -1.42861828e-01 ... -7.45220575e-03\n    -2.06923649e-01 -4.99255508e-02]]\n\n  [[-3.86844069e-01  4.56344277e-01 -1.43372178e-01 ... -2.04839706e-01\n     1.29989088e-01  1.54350966e-03]\n   [ 8.64267051e-02  4.69300449e-01 -2.88850397e-01 ...  5.90365887e-01\n    -1.22255469e-02 -1.35197923e-01]\n   [-2.07163244e-01  5.81390373e-02  3.38748395e-01 ... -4.31563765e-01\n    -1.32325277e-01 -1.72741055e-01]\n   [ 1.48197308e-01  2.49756187e-01  9.07538906e-02 ...  2.68556774e-01\n    -1.32647514e-01 -2.30888799e-01]\n   [ 1.43849939e-01  3.64765137e-01  3.81661713e-01 ... -8.23405802e-01\n    -2.76555270e-02  2.28890494e-01]\n   [ 1.53593153e-01 -2.57793307e-01  1.37483841e-02 ... -2.45031059e-01\n    -3.44004303e-01 -4.25686210e-01]]\n\n  [[ 4.98314083e-01  2.03871727e-01 -5.95684648e-01 ...  3.58886421e-02\n    -1.44802138e-01  2.46443436e-01]\n   [ 9.12883282e-02  3.92693639e-01 -2.90301681e-01 ...  3.11744928e-01\n     1.11103483e-01 -3.36753018e-02]\n   [-5.10391891e-02  3.43166381e-01  1.12175845e-01 ...  3.49508189e-02\n    -3.43621135e-01 -6.08362723e-03]\n   [-1.17407225e-01  3.64645094e-01  4.44836169e-02 ...  6.37417808e-02\n     5.17180525e-02  1.51653392e-02]\n   [ 4.58100826e-01  2.22815111e-01  1.00698307e-01 ... -5.79067349e-01\n    -7.65410289e-02 -5.62118031e-02]\n   [-1.73513710e-01  2.70733267e-01 -1.00815184e-01 ... -1.41423762e-01\n    -1.22033231e-01 -2.40597039e-01]]\n\n  [[ 1.56308524e-02 -3.35260689e-01 -3.63921195e-01 ...  4.11319405e-01\n    -8.41365010e-02  1.81007683e-02]\n   [-1.46839693e-01 -9.49965883e-03 -1.09195761e-01 ...  9.14598554e-02\n     6.21843934e-02  2.07320705e-01]\n   [-3.12013887e-02 -4.62599188e-01  2.85980225e-01 ...  1.89010471e-01\n    -1.26671463e-01  2.43083924e-01]\n   [ 1.46472165e-02  2.36087218e-01  5.85283376e-02 ...  2.25263331e-02\n     1.26168326e-01  1.47016048e-01]\n   [ 5.88997733e-03 -1.63385421e-01  2.77098507e-01 ...  6.88903928e-02\n     6.68831468e-02  5.08318953e-02]\n   [ 2.28104338e-01  1.85897365e-01 -1.12728789e-01 ... -2.72136182e-02\n    -1.88902333e-01 -1.04785219e-01]]]\n\n\n [[[-3.12861264e-01  1.43349379e-01  6.80959150e-02 ...  1.26412764e-01\n    -1.33613274e-01 -1.06516540e-01]\n   [-1.74059212e-01 -2.13978942e-02  7.41264150e-02 ... -1.42578006e-01\n     2.71939516e-01  9.05435011e-02]\n   [ 1.56630591e-01 -2.75337715e-02  2.98186280e-02 ...  4.03685383e-02\n    -6.65274933e-02  3.92331965e-02]\n   [ 1.43651783e-01 -1.31209329e-01  1.09674461e-01 ...  3.74690699e-03\n     1.36346877e-01 -2.44744956e-01]\n   [-7.55540207e-02 -6.80029541e-02 -2.31275484e-01 ...  1.44035444e-01\n     9.80698094e-02  1.06313348e-01]\n   [ 2.49791201e-02  6.85882121e-02 -6.36900589e-02 ...  1.00277059e-01\n    -1.70543954e-01  3.49947810e-02]]\n\n  [[-3.28517221e-02  1.60320640e-01 -3.07816923e-01 ... -1.83294237e-01\n    -1.72299221e-01 -2.58370608e-01]\n   [ 8.44606087e-02  9.29517299e-02  3.34009007e-02 ... -1.91938415e-01\n     1.77206114e-01  4.33659628e-02]\n   [ 1.84320271e-01 -3.52207795e-02  4.64548171e-02 ...  2.54413843e-01\n    -1.15680471e-01 -3.98133136e-02]\n   [ 2.37280992e-03 -7.78206438e-02  1.44482031e-01 ...  9.21728089e-02\n     3.13494280e-02 -5.55692427e-02]\n   [ 1.76223084e-01 -1.34210214e-02 -1.24032959e-01 ... -9.54631269e-02\n    -8.66981894e-02 -5.65823801e-02]\n   [-2.59117745e-02 -1.34837821e-01  1.70897871e-01 ... -8.41738731e-02\n    -9.09119248e-02 -2.91580498e-01]]\n\n  [[-5.14435656e-02  8.78672153e-02 -5.80191255e-01 ... -6.81589842e-01\n     8.17608312e-02 -6.76547876e-03]\n   [-6.85454533e-02  8.74993131e-02 -1.91003829e-01 ... -2.67022550e-02\n    -1.07669622e-01 -1.21096119e-01]\n   [ 2.16598157e-02  3.48988950e-01  6.47788793e-02 ...  3.95699851e-02\n     1.50354177e-01  2.14637950e-01]\n   [-7.12791085e-02  2.04280674e-01  1.81951970e-02 ...  7.95324817e-02\n     5.47584482e-02 -3.60843539e-02]\n   [ 1.12169199e-01 -1.25864357e-01 -1.85801312e-01 ...  1.92360476e-01\n     1.92813292e-01  1.24815814e-02]\n   [-1.63528323e-01 -1.74195543e-02  6.31753951e-02 ... -1.61020026e-01\n     2.42295545e-02 -1.20784484e-01]]\n\n  [[-1.93348359e-02 -1.97377607e-01 -4.14560586e-01 ... -4.87878829e-01\n    -1.66397765e-01  1.45025179e-01]\n   [-1.79309756e-01 -2.20335290e-01 -5.92507236e-02 ...  2.09790990e-01\n     3.81055363e-02 -2.56554852e-03]\n   [ 5.64170592e-02  1.06420547e-01 -6.53422847e-02 ... -4.09696192e-01\n     1.48386523e-01  1.79209173e-01]\n   [ 1.00051299e-01 -2.47789901e-02 -1.69583723e-01 ...  2.51193374e-01\n     1.73474222e-01  4.18412574e-02]\n   [ 7.85565674e-02 -2.16077000e-01 -1.65676236e-01 ... -6.43058419e-02\n    -5.58975823e-02  1.04049683e-01]\n   [-3.05086970e-01  6.47789016e-02 -2.40819365e-01 ...  1.10552125e-01\n    -2.37877831e-01 -1.81903899e-01]]\n\n  [[-1.81299478e-01 -3.33211124e-01  1.02144871e-02 ... -1.89387396e-01\n    -2.35107303e-01 -8.69374275e-02]\n   [-1.65368423e-01 -3.96927036e-02 -1.43381755e-03 ...  1.85735404e-01\n     1.15805164e-01 -2.47908890e-01]\n   [-1.48215285e-02 -3.13738197e-01  1.32427156e-01 ... -3.92881036e-02\n     6.40691444e-03  3.01753163e-01]\n   [-1.01898052e-01  7.90674165e-02 -4.23212834e-02 ...  2.73845464e-01\n     3.92196886e-02  1.36920914e-01]\n   [-1.25037178e-01  1.53613850e-01  2.12343678e-01 ... -4.82421853e-02\n     7.35736415e-02  6.72273934e-02]\n   [ 2.05293391e-02 -6.29445091e-02 -9.73453820e-02 ... -5.62460758e-02\n     6.41283467e-02 -6.10815324e-02]]]]\ntensor_name:  Variable_2/Adam\n[[[[-4.07839008e-03  1.56649458e-03  7.12964742e-04 ...  3.89189554e-05\n     2.27588997e-03  1.05695054e-03]\n   [-5.49112214e-03  1.72189274e-03 -1.19741040e-03 ... -1.04448013e-03\n     3.75003438e-03  6.83336891e-03]\n   [-1.99770369e-03 -1.62707735e-03  2.44510965e-03 ...  2.32359394e-03\n     4.79985407e-04 -6.32206211e-04]\n   [-2.53634946e-03 -2.15710769e-03 -1.24052691e-03 ...  2.76530348e-03\n     1.02844159e-03  1.67770439e-03]\n   [-9.22094696e-05 -1.12187234e-03  2.19324674e-03 ...  3.18403193e-03\n     4.23993042e-04  3.25707661e-04]\n   [-5.00436057e-04 -1.99696794e-03 -9.73136339e-04 ...  5.70556265e-04\n     2.12194558e-04 -6.10828749e-04]]\n\n  [[-2.72535253e-03  3.11306724e-03  6.90548855e-04 ... -1.40876521e-03\n     1.11666205e-03  2.45274324e-03]\n   [-2.64452607e-03  6.56695338e-04  1.93430716e-03 ... -1.78333791e-03\n     4.18940745e-03  1.00687752e-02]\n   [-2.37741624e-03 -1.92073174e-04  7.65966601e-04 ...  3.87400785e-03\n    -3.91306909e-04 -4.16782481e-04]\n   [-1.73416827e-03 -2.12022685e-03 -2.70795834e-04 ...  3.89432209e-03\n     1.61085150e-03  4.59339842e-03]\n   [-3.36943427e-03  3.18791368e-04  4.89997095e-04 ...  1.76694954e-03\n     4.62391879e-04  3.85344058e-04]\n   [ 1.70224707e-03 -2.86418339e-03 -8.89688265e-04 ...  1.97740947e-03\n     4.70247498e-04 -1.99899849e-04]]\n\n  [[-1.56537595e-03  9.86325438e-04 -9.46602231e-05 ... -3.29939323e-03\n     1.18583185e-03 -2.76879594e-03]\n   [-3.84493195e-03 -4.57475107e-04  2.38770293e-03 ... -5.56639489e-03\n     3.36261489e-03  1.10455137e-02]\n   [-3.33830685e-04  7.65907578e-04  7.43453100e-04 ...  3.79176345e-03\n    -4.15384449e-04 -2.76945927e-03]\n   [-2.96353153e-03  2.90566881e-04  4.68349026e-04 ...  2.17389362e-03\n     2.31115846e-03  5.77753130e-03]\n   [-2.39994982e-03 -8.29200726e-05  1.54393303e-04 ...  1.83586881e-03\n     2.23687894e-04 -2.58849747e-03]\n   [ 9.30524257e-04 -1.51345378e-03 -9.83854057e-04 ...  2.86647468e-03\n     1.26751978e-03  5.57220820e-03]]\n\n  [[ 1.12570322e-03 -2.20540189e-03 -1.21884525e-03 ... -3.43022030e-03\n     8.76585837e-04 -1.92123093e-03]\n   [-5.32909762e-03 -1.64585805e-03  1.74485997e-03 ... -4.65554744e-03\n     2.70160893e-03  9.45298001e-03]\n   [ 7.75172142e-04  3.01833410e-04  7.32068962e-04 ...  1.80535542e-03\n     4.33809910e-04 -2.55154865e-03]\n   [-4.46806382e-03  2.49633100e-04  2.47911026e-04 ...  1.35559443e-04\n     2.25795573e-03  3.71786579e-03]\n   [ 8.50361423e-04  1.89303362e-04 -1.49018108e-03 ...  6.94505987e-04\n    -1.46585982e-04 -2.18287250e-03]\n   [-1.28360360e-03 -3.04880989e-04 -1.49213080e-03 ...  2.79559474e-03\n     2.46995618e-03  4.61944658e-03]]\n\n  [[ 2.81406334e-03 -2.06774357e-03 -1.73893559e-03 ... -2.14164238e-03\n    -1.54346193e-03 -1.15423661e-03]\n   [-5.36982529e-03 -1.62947678e-03  1.94586045e-03 ... -5.47211338e-03\n     1.80084084e-03  4.70842747e-03]\n   [ 1.30115112e-03  3.97664233e-04 -5.51355130e-04 ...  1.71009952e-03\n    -6.41916238e-04 -1.24927633e-03]\n   [-3.82562331e-03 -4.30599845e-04  2.13270381e-04 ... -3.32398340e-04\n     1.51849457e-03  9.03934182e-04]\n   [ 2.98277964e-03  7.81778144e-05 -6.06138725e-04 ...  2.63726077e-04\n    -1.42161548e-03 -2.29709572e-03]\n   [-3.21214576e-03  3.52965944e-05  7.00148157e-05 ...  2.54417630e-03\n     3.09917238e-03  3.46816098e-03]]]\n\n\n [[[-2.83080433e-03  3.46135884e-03  1.82950369e-03 ...  4.88619960e-04\n     7.39212381e-04 -9.06351255e-04]\n   [-5.56354364e-03  2.90993066e-03  8.95993071e-05 ... -1.35574373e-03\n     1.52729452e-03  8.92595504e-04]\n   [ 1.21027906e-03 -1.98727055e-03  3.02011787e-04 ...  6.38120295e-03\n     1.57344295e-03  1.21662486e-03]\n   [-3.45369359e-03 -1.47196162e-03 -5.68375923e-04 ...  2.27875100e-03\n     1.86273910e-03  1.07649644e-03]\n   [ 1.08528970e-04 -1.81556010e-04  1.39297184e-03 ...  1.88521843e-03\n     1.52249041e-03 -6.40425307e-04]\n   [-1.10634044e-03 -2.04874109e-03 -3.93220893e-04 ...  1.12630334e-03\n     1.05675880e-03 -1.34494039e-03]]\n\n  [[-2.03148439e-03  1.15483662e-03  2.26739771e-03 ... -4.85214824e-03\n     3.84931802e-04 -8.62038796e-05]\n   [-3.87454801e-03  2.89448537e-03  1.73768518e-03 ... -5.87579235e-03\n    -7.29223830e-05 -1.26321102e-03]\n   [-1.51442632e-03 -8.21467256e-04  8.69843818e-04 ...  6.20223070e-03\n     2.05197302e-03  2.08965968e-03]\n   [-2.50961725e-03 -3.92340007e-04 -2.15170439e-04 ...  1.29565480e-03\n     1.45530689e-03  1.50085648e-03]\n   [-9.17702855e-04 -2.24789814e-03  3.88630695e-04 ...  4.00708010e-03\n     1.48741284e-03 -1.58862326e-06]\n   [ 9.59439727e-04 -1.09395862e-03 -1.11739710e-03 ...  2.86813639e-03\n     6.80631318e-04 -5.64622635e-04]]\n\n  [[-1.52981468e-03 -2.50026514e-03  2.46516283e-04 ... -2.83293333e-03\n     5.46474650e-04 -2.81749433e-03]\n   [-2.63660192e-03 -1.48838176e-03  1.50408864e-03 ... -1.27485744e-03\n    -2.71006691e-04 -2.14342945e-04]\n   [-1.94637186e-03  1.26415025e-03  4.66189958e-04 ...  2.71615898e-03\n     1.38988055e-03 -5.00761380e-04]\n   [-2.30352185e-03 -6.22807653e-04  1.03978801e-03 ...  1.05349720e-03\n     1.43219240e-03  1.89279579e-03]\n   [-2.60352460e-03 -1.09675026e-03 -2.37335102e-04 ...  5.29241050e-03\n     1.59286102e-03 -1.29147514e-03]\n   [ 1.84407504e-03 -3.74600844e-04 -6.54254807e-04 ...  1.91418827e-03\n     1.20230007e-03  2.74362299e-03]]\n\n  [[ 1.15643151e-03 -1.85956212e-03 -2.69036274e-04 ... -9.37784731e-04\n     3.09563300e-04 -1.89841236e-03]\n   [-3.55131063e-03 -9.96873481e-04  2.09378684e-03 ...  8.61305685e-04\n     9.77463205e-04  2.32602051e-03]\n   [ 5.25603537e-05  4.10210545e-04 -7.19785690e-04 ...  2.43505905e-03\n     8.79018451e-04 -1.63382245e-03]\n   [-4.57339687e-03 -1.13347021e-03  2.31020895e-04 ...  1.20905344e-03\n     2.01957859e-03  2.01177783e-03]\n   [-8.73826444e-04  1.06914574e-03 -8.05222313e-04 ...  2.07142602e-03\n     1.53475313e-03 -3.45527381e-03]\n   [-6.39060745e-04 -5.26080723e-04 -1.79554010e-03 ...  1.90595340e-03\n     2.08793674e-03  3.61711811e-03]]\n\n  [[ 1.94951729e-03 -1.21318549e-03 -1.30282994e-03 ... -6.50358677e-04\n    -7.57619273e-04 -2.06392049e-03]\n   [-4.83043864e-03  1.60889677e-03  3.20997788e-03 ...  2.34247441e-03\n     1.35613920e-03  4.65136673e-03]\n   [ 1.77668419e-03 -2.45473144e-04 -1.05037901e-03 ...  1.72309438e-03\n    -3.43082182e-04 -3.64878401e-03]\n   [-3.88230709e-03 -8.59256252e-05  7.10358901e-04 ...  1.46207167e-03\n     1.69386738e-03 -9.07675072e-04]\n   [ 1.15179003e-03 -1.45285039e-05 -2.55058240e-03 ...  1.87811721e-03\n    -8.33960221e-05 -3.06703127e-03]\n   [-2.11093132e-03 -6.92392450e-06 -8.54463724e-05 ...  3.69635224e-03\n     2.56685447e-03  2.24489882e-03]]]\n\n\n [[[-4.15842468e-03  4.16801916e-03  2.19945819e-03 ... -3.60291940e-03\n    -4.51850268e-04 -2.06759898e-03]\n   [-1.39987341e-03 -3.54049075e-03 -9.10883537e-04 ...  4.37150802e-03\n     8.40498484e-04  8.21088441e-03]\n   [-6.95283059e-04 -7.68214988e-04  1.55183091e-03 ...  3.66591243e-03\n     2.23387405e-03 -4.43103258e-03]\n   [-2.99953297e-03 -2.00579711e-03 -1.76342565e-03 ...  2.18319730e-03\n     1.40211894e-03  3.02290102e-03]\n   [-1.79950322e-03  1.48003642e-03  2.65675876e-03 ... -5.02131926e-03\n     1.71515543e-03 -3.72422952e-03]\n   [ 2.08383644e-05 -2.76018842e-03 -6.95802679e-04 ...  2.70503224e-03\n     1.29230798e-03  2.98346451e-04]]\n\n  [[-1.35408528e-03  4.69489387e-05  2.28498410e-03 ... -5.65876206e-03\n     1.71966822e-04 -3.03101086e-04]\n   [-3.59030301e-03  1.39522529e-03 -8.72229517e-04 ... -1.43688859e-03\n     3.26498957e-05  5.16632153e-03]\n   [ 1.29586121e-03 -1.37961667e-03  1.58640137e-03 ...  5.70320804e-03\n     1.73732790e-03 -2.26394017e-03]\n   [-3.41067463e-03  7.82180054e-04 -5.90898097e-04 ... -1.71862682e-03\n     7.27487030e-04  1.40694086e-03]\n   [-3.27932037e-04 -2.94964062e-03  2.50891736e-03 ...  3.02167355e-05\n     1.28786592e-03 -2.93819304e-03]\n   [ 3.38546699e-04 -1.30678341e-03 -1.22747838e-03 ...  1.23062916e-03\n     8.48841853e-04 -9.44787636e-04]]\n\n  [[-1.07388885e-03 -3.59863229e-03  5.79699292e-04 ...  1.72217769e-04\n     7.96011998e-04 -1.19836756e-03]\n   [-4.62200260e-03  4.17331357e-05  1.82782533e-04 ... -2.29876698e-03\n    -8.07810982e-04  3.03274696e-03]\n   [ 2.41768721e-04 -5.84668887e-04  6.67455606e-04 ...  7.32490746e-03\n     1.04795769e-03 -2.78094108e-03]\n   [-2.96108937e-03  3.08605464e-04  3.95659212e-04 ... -6.93250622e-04\n     2.94239326e-05  2.28709052e-03]\n   [-3.13492550e-04 -3.44055425e-03  1.75421138e-03 ...  4.68836678e-03\n     1.17701187e-03 -2.92605115e-03]\n   [ 1.34091242e-03 -3.13260214e-04 -1.21946540e-03 ... -6.40329090e-04\n     1.84404809e-04  1.13904569e-03]]\n\n  [[-5.10482234e-04 -1.47335319e-04  4.72978194e-04 ... -2.50710780e-03\n     2.35969259e-04 -1.77286146e-03]\n   [-4.90732072e-03 -4.27000545e-04  1.35943829e-03 ... -3.08460067e-03\n    -2.35490312e-04  3.14955367e-03]\n   [ 8.88139984e-05  7.51146988e-04  1.25202350e-03 ...  5.35372831e-03\n     1.29722571e-03 -4.67856182e-03]\n   [-4.24668519e-03 -4.75633511e-04  2.17666104e-03 ... -1.92247608e-04\n     6.88813860e-04  1.82836398e-03]\n   [ 6.75028423e-04 -4.36243630e-04  1.76315068e-03 ...  3.83500452e-03\n     4.63335251e-04 -3.21594928e-03]\n   [-4.99909918e-04 -9.61301092e-04 -5.38661261e-04 ...  2.20273621e-03\n     7.40884629e-04  1.87420414e-03]]\n\n  [[ 1.58924563e-03 -1.16248103e-03 -9.92140966e-04 ... -5.21039765e-04\n    -1.12921314e-03 -1.54780282e-03]\n   [-4.82546911e-03  6.73731032e-04  8.53011501e-04 ... -2.26877257e-03\n     1.39162978e-04  3.14952270e-03]\n   [-1.59730087e-03  4.44822712e-04  8.38713022e-04 ...  4.63967491e-03\n     7.60356430e-04 -3.73764313e-03]\n   [-5.85147459e-03  1.13442028e-03  2.74659949e-03 ... -8.55703547e-05\n     1.26664713e-03  8.39849003e-04]\n   [ 6.31632458e-04 -2.06161843e-04  2.43867238e-04 ...  2.83657364e-03\n    -4.91474530e-05 -2.64862389e-03]\n   [-3.35860834e-03  5.98889368e-04  1.37939327e-03 ...  2.21206225e-03\n     1.91447476e-03  1.13990624e-03]]]\n\n\n [[[-4.70655598e-03  3.75531963e-03  2.31723394e-03 ... -4.07447992e-03\n    -4.94096930e-05 -1.09781011e-03]\n   [ 5.21196518e-04 -2.89461785e-03  2.60939356e-03 ...  6.28413353e-03\n     2.63894722e-03  4.84990655e-03]\n   [-2.93788174e-03  1.48294072e-04  4.47401806e-04 ... -2.59018759e-03\n     3.46712157e-04 -3.85374320e-03]\n   [-2.45867111e-03 -2.93184677e-03 -4.26756713e-04 ...  3.63780023e-03\n     1.19960622e-03  5.32910740e-03]\n   [-4.78832982e-03  2.55917269e-03 -2.91725853e-04 ... -4.01690882e-03\n    -8.56317231e-04 -2.38127518e-03]\n   [ 1.24851032e-03 -4.29993495e-03 -3.83695762e-04 ...  2.49408744e-03\n     1.27215940e-03  8.09851103e-04]]\n\n  [[-2.52787187e-03 -2.95730395e-04  1.26863911e-03 ... -4.88153705e-03\n     1.11569790e-03 -2.11649411e-03]\n   [-2.77006556e-03 -9.18796752e-04  5.52482030e-04 ...  5.86966937e-03\n     1.56607502e-03  2.69648293e-03]\n   [-5.79369487e-04 -1.21959485e-03  1.53156463e-03 ... -2.26268801e-03\n     2.94435595e-04 -2.60506268e-03]\n   [-4.04307945e-03 -7.50000647e-04 -1.22933369e-03 ...  3.48199566e-04\n    -9.61262704e-05  4.03566565e-03]\n   [-4.64352965e-03 -1.05245190e-03  1.34860945e-03 ... -4.44452791e-03\n    -3.57863173e-04 -3.71857150e-03]\n   [ 1.37594552e-03 -3.32849543e-03 -1.10241596e-03 ...  3.36728990e-03\n     2.21459850e-04  1.19905011e-03]]\n\n  [[-1.87843607e-03 -3.88445565e-03  2.39979461e-04 ... -1.25775451e-03\n     1.05388649e-03 -3.25167365e-03]\n   [-4.74810740e-03 -1.80792203e-03  7.33193767e-04 ...  5.68529963e-03\n     9.23059939e-04 -1.54708716e-04]\n   [-3.52269240e-06 -1.89506018e-03  2.72218324e-03 ...  2.30963482e-03\n     1.06801141e-04 -1.72362861e-03]\n   [-6.00492535e-03  2.49235545e-05  5.31398167e-04 ... -7.08940555e-04\n    -4.15184506e-04  2.83139851e-03]\n   [-2.84589105e-03 -2.85044918e-03  1.60527427e-03 ... -1.55191706e-03\n     3.77146716e-05 -3.29007534e-03]\n   [-3.04412912e-04 -5.71051787e-04 -9.21117258e-04 ...  2.75657768e-03\n    -1.73643857e-04  1.69972156e-03]]\n\n  [[ 6.00526801e-05 -2.34091096e-03 -3.68673122e-04 ... -1.63307344e-03\n     1.61760458e-04 -2.25173961e-03]\n   [-3.95706436e-03 -1.74418720e-03 -1.38988299e-03 ...  2.32789526e-03\n     1.33988808e-03  1.26311628e-04]\n   [-1.39964675e-03 -2.55985251e-05  1.90541765e-03 ...  3.87195218e-03\n     6.04160887e-04 -2.18913681e-03]\n   [-7.11300177e-03 -3.68162087e-04  1.07471657e-03 ... -1.72323105e-03\n     7.38096831e-04  1.95073872e-03]\n   [-1.31793797e-03 -9.92796849e-04  1.12487783e-03 ...  1.10283506e-03\n    -6.48395799e-04 -2.29116110e-03]\n   [-2.76540173e-03  5.98690567e-05 -4.93916741e-04 ...  2.70408043e-03\n     6.43629173e-04  1.42218475e-03]]\n\n  [[ 2.28550937e-03 -5.14281564e-04 -1.31356984e-03 ... -5.67457930e-04\n    -9.04498098e-04 -2.03759572e-03]\n   [-1.52775459e-03 -1.72295328e-03 -1.54694123e-03 ... -9.46132001e-04\n     9.32793249e-04 -1.95758138e-03]\n   [-2.37843441e-03 -8.76410108e-04  1.83813740e-03 ...  2.27570906e-03\n     8.47503659e-04 -2.16193148e-03]\n   [-7.63016986e-03 -4.49115527e-04  9.39220172e-06 ... -1.36502157e-03\n     9.05596651e-04  9.20457242e-04]\n   [ 2.93897756e-04 -4.32843954e-04  1.36895338e-03 ... -4.95668864e-05\n    -5.56054525e-04 -2.89010210e-03]\n   [-6.04265323e-03 -4.03981918e-04 -1.07774737e-04 ...  1.34947326e-03\n     1.63292256e-03  1.93485571e-03]]]\n\n\n [[[-3.39363259e-03  2.00957153e-03  1.71566801e-03 ... -1.63047959e-03\n     9.24945285e-04  1.48727838e-03]\n   [-1.11039903e-03 -1.20018166e-03  2.76948046e-03 ...  2.55307974e-03\n     3.96630354e-03 -1.28032686e-03]\n   [-4.76528937e-03  2.15153093e-03 -2.47267704e-03 ... -9.41190010e-05\n    -1.72390742e-03 -7.54987486e-05]\n   [-1.62102096e-03 -1.73422392e-03 -5.34999184e-04 ...  2.54668784e-03\n     1.98787451e-03  3.76123725e-03]\n   [-4.69813915e-03  2.56554666e-03 -1.35998591e-03 ...  1.35768473e-03\n    -6.38102647e-04  2.86309491e-03]\n   [ 1.61255943e-03 -2.73739500e-03 -1.01990742e-03 ...  3.86847183e-04\n     2.02170690e-03 -1.88507664e-04]]\n\n  [[-2.36036628e-03 -8.48635042e-04  3.48064263e-04 ... -3.42617021e-03\n     1.37137319e-03 -2.02048454e-03]\n   [-1.46748056e-03 -3.82332923e-03  1.46546296e-03 ...  8.17112718e-03\n     2.70487438e-03  1.50946411e-03]\n   [-4.57748026e-03  2.21538055e-03 -1.27943710e-03 ... -3.29652918e-03\n    -1.23585004e-03 -5.37108071e-03]\n   [-3.65042221e-03 -7.95905653e-04 -1.27393438e-03 ...  4.02403669e-03\n     1.13770319e-03  5.24144899e-03]\n   [-6.16190350e-03  1.86248834e-03 -2.08510621e-03 ... -2.37427023e-03\n    -1.79211303e-04 -2.57218932e-03]\n   [ 2.05869740e-03 -2.01040134e-03 -1.30665151e-03 ...  3.84323485e-03\n     1.08326401e-03  1.61353068e-03]]\n\n  [[-9.46565706e-04 -3.17193009e-03  4.44111560e-04 ... -3.21880146e-03\n     1.55566051e-03 -2.08380516e-03]\n   [-1.99230434e-03 -1.73989451e-03  2.00888212e-03 ...  7.78123783e-03\n     2.23374576e-03  3.41394660e-03]\n   [-5.18757058e-03  5.66133647e-04 -1.04425848e-03 ... -5.67221490e-04\n    -8.96016310e-04 -4.00979957e-03]\n   [-6.78402558e-03  5.77469182e-04 -7.93802174e-05 ...  2.72698049e-03\n     1.27516629e-03  4.05643834e-03]\n   [-4.25629644e-03  3.92415182e-04 -2.51697167e-03 ... -3.58308712e-03\n     5.98647690e-04 -4.61368356e-03]\n   [-1.75633689e-03 -1.16502738e-03 -1.18058444e-04 ...  5.46647096e-03\n     8.72960314e-04  2.05304218e-03]]\n\n  [[ 2.06881063e-03 -3.09747178e-03 -8.57557869e-04 ... -1.38314127e-03\n     1.85200915e-04 -1.63169310e-03]\n   [ 3.81040809e-05 -2.36611604e-03  1.80603284e-03 ...  2.57551158e-03\n     2.57949764e-03  2.50841142e-03]\n   [-5.26407966e-03  1.16250035e-03 -2.34190491e-03 ...  4.04801103e-04\n    -3.81182850e-04 -2.83378665e-03]\n   [-6.95810374e-03 -1.90609775e-04 -1.05177960e-03 ... -1.88965423e-04\n     2.21431209e-03  3.87480087e-03]\n   [-2.77015148e-03  1.21999264e-03 -2.43376591e-03 ... -1.63336948e-03\n    -1.26037421e-03 -5.34838531e-03]\n   [-4.06312896e-03  4.17747797e-04 -1.09973014e-03 ...  5.06316731e-03\n     2.47915741e-03  3.25271953e-03]]\n\n  [[ 2.21019564e-03 -2.42383365e-04 -1.17166503e-03 ... -7.15714763e-04\n    -7.38504401e-04 -2.05960451e-03]\n   [ 1.66123954e-03 -3.30057344e-03  8.79315892e-04 ... -7.58966024e-04\n     1.12117152e-03 -2.70504213e-04]\n   [-3.34170065e-03 -4.63427888e-04 -1.25175036e-04 ...  1.20640290e-03\n     2.34764477e-04  2.38170149e-04]\n   [-5.51338634e-03 -9.33915435e-04  2.16962580e-05 ... -2.84319348e-03\n     1.35957834e-03  2.71761371e-03]\n   [-9.39870777e-04  1.18958787e-03 -3.08030634e-03 ... -2.17256369e-04\n    -1.14023918e-03 -3.59327137e-03]\n   [-5.53995138e-03 -1.17085828e-03 -7.72538129e-04 ...  2.25879182e-03\n     2.29168707e-03  3.42329475e-03]]]]\ntensor_name:  Variable_2/Adam_1\n[[[[1.07982618e-04 1.00994403e-04 5.74930673e-05 ... 9.31442555e-05\n    9.68822205e-05 1.28895859e-04]\n   [1.58111972e-04 1.45106795e-04 5.94310804e-05 ... 1.24324404e-04\n    1.35941358e-04 2.15872569e-04]\n   [2.32818529e-05 5.64962393e-05 6.42656669e-05 ... 8.55115504e-05\n    2.29157395e-05 5.80833439e-05]\n   [1.01600082e-04 1.31962384e-04 1.07642205e-04 ... 1.61323449e-04\n    9.95304144e-05 1.30285902e-04]\n   [3.21661682e-05 4.69766856e-05 4.76256500e-05 ... 6.57401179e-05\n    2.46980271e-05 7.07961663e-05]\n   [4.92016989e-05 5.79663320e-05 3.69424633e-05 ... 6.35337201e-05\n    3.81518839e-05 2.16085700e-05]]\n\n  [[5.64860311e-05 8.36346517e-05 7.12038891e-05 ... 6.70311856e-05\n    2.01929888e-05 9.22031031e-05]\n   [1.42877514e-04 1.18373217e-04 7.09464657e-05 ... 1.26085055e-04\n    1.24708298e-04 2.58758140e-04]\n   [4.48184510e-05 7.37477676e-05 4.78249240e-05 ... 6.76853379e-05\n    4.75246961e-05 5.60475310e-05]\n   [1.16031006e-04 1.27643783e-04 1.05493818e-04 ... 1.61164644e-04\n    1.24001963e-04 1.70248284e-04]\n   [2.48251636e-05 5.35164545e-05 5.15585416e-05 ... 6.31694493e-05\n    1.99590231e-05 7.00720484e-05]\n   [4.98658919e-05 5.66917224e-05 2.83953032e-05 ... 4.88161859e-05\n    6.80611993e-05 2.58989676e-05]]\n\n  [[2.42092647e-05 9.82767233e-05 6.02183500e-05 ... 7.79403417e-05\n    2.38908051e-05 5.37440610e-05]\n   [1.18234500e-04 1.24560611e-04 1.22534169e-04 ... 1.76069690e-04\n    9.75160146e-05 2.88723066e-04]\n   [6.21608851e-05 7.36860311e-05 3.54288823e-05 ... 5.61010565e-05\n    5.83775764e-05 3.85294989e-05]\n   [1.16193376e-04 1.18333264e-04 1.14757058e-04 ... 1.70175175e-04\n    9.79765900e-05 2.08340309e-04]\n   [3.63608924e-05 7.40351970e-05 2.86200393e-05 ... 5.56290142e-05\n    4.08427113e-05 4.92929103e-05]\n   [5.13898813e-05 3.58536381e-05 3.75688251e-05 ... 5.27361626e-05\n    5.32856902e-05 5.24952156e-05]]\n\n  [[3.49313741e-05 8.73120734e-05 3.85951462e-05 ... 6.47768393e-05\n    2.87488729e-05 2.15248674e-05]\n   [1.12068163e-04 1.59558636e-04 1.47922008e-04 ... 2.26224147e-04\n    1.25125851e-04 3.02907196e-04]\n   [4.93825355e-05 6.74484691e-05 4.20870128e-05 ... 5.26163822e-05\n    4.71818275e-05 3.31762567e-05]\n   [1.09841407e-04 1.25536724e-04 1.26416082e-04 ... 1.76499801e-04\n    8.89606235e-05 2.24983058e-04]\n   [4.71907915e-05 6.39459104e-05 2.59833068e-05 ... 4.42734381e-05\n    3.67249449e-05 2.38211160e-05]\n   [3.44242180e-05 4.00601384e-05 5.03552910e-05 ... 7.06178762e-05\n    7.26481521e-05 1.06933192e-04]]\n\n  [[5.17767185e-05 5.92733486e-05 4.44820253e-05 ... 5.28189266e-05\n    2.80589538e-05 2.50149442e-05]\n   [1.14914052e-04 1.73635533e-04 1.45448546e-04 ... 2.42026435e-04\n    1.47277795e-04 2.22829243e-04]\n   [3.70309972e-05 5.75267695e-05 5.73669095e-05 ... 7.19946474e-05\n    4.18669224e-05 6.72093229e-05]\n   [1.07376596e-04 1.40764489e-04 1.33060676e-04 ... 1.91855783e-04\n    1.03555241e-04 1.71747306e-04]\n   [3.73312250e-05 5.64502152e-05 4.41464690e-05 ... 4.66858546e-05\n    3.21119733e-05 3.43151842e-05]\n   [5.44005779e-05 6.96163697e-05 6.35035540e-05 ... 1.14710034e-04\n    8.33733648e-05 1.20827157e-04]]]\n\n\n [[[9.43316772e-05 1.00326790e-04 6.73632676e-05 ... 7.98895708e-05\n    8.43420275e-05 1.06240557e-04]\n   [9.06428249e-05 1.24984246e-04 9.10828749e-05 ... 9.26561333e-05\n    7.15935748e-05 6.85842679e-05]\n   [4.10197827e-05 5.42076123e-05 3.18145721e-05 ... 9.26348584e-05\n    5.25696378e-05 1.04956744e-04]\n   [1.11977133e-04 1.26865925e-04 9.07079302e-05 ... 1.54629059e-04\n    1.20944656e-04 1.43552912e-04]\n   [4.41539923e-05 4.35249713e-05 3.13868622e-05 ... 5.91441349e-05\n    4.95345521e-05 8.70301301e-05]\n   [4.51270389e-05 6.07570073e-05 3.34007927e-05 ... 6.82875252e-05\n    4.69564729e-05 2.48667820e-05]]\n\n  [[3.86316933e-05 7.25933278e-05 1.00561912e-04 ... 8.92496682e-05\n    6.39585551e-06 6.86679850e-05]\n   [9.06753630e-05 1.12355003e-04 1.14708237e-04 ... 1.12638329e-04\n    7.19903474e-05 4.26039041e-05]\n   [4.62214048e-05 6.01944776e-05 2.04188545e-05 ... 9.56857039e-05\n    5.21429101e-05 1.20235207e-04]\n   [1.23316495e-04 1.17550400e-04 8.61488588e-05 ... 1.31682900e-04\n    1.32324902e-04 1.69117950e-04]\n   [2.73178866e-05 4.25597646e-05 3.75456475e-05 ... 8.06523822e-05\n    2.45243918e-05 1.04349157e-04]\n   [6.06604699e-05 5.82472749e-05 1.50316100e-05 ... 3.58729521e-05\n    8.75347687e-05 2.81465891e-05]]\n\n  [[1.28872853e-05 9.73484493e-05 8.09399280e-05 ... 8.83257162e-05\n    2.66118004e-05 5.74956248e-05]\n   [6.57144483e-05 8.98961516e-05 1.65110920e-04 ... 1.74517423e-04\n    6.35070610e-05 4.42355122e-05]\n   [4.91115279e-05 5.92817887e-05 1.32547138e-05 ... 8.35460669e-05\n    3.89341039e-05 1.04816019e-04]\n   [1.03322018e-04 9.46959335e-05 1.24157435e-04 ... 1.41462355e-04\n    8.20671557e-05 1.78988645e-04]\n   [3.03520264e-05 5.87550530e-05 2.24547857e-05 ... 8.02279392e-05\n    3.72719805e-05 9.96308954e-05]\n   [5.33752245e-05 2.84056932e-05 2.50405956e-05 ... 3.35739096e-05\n    4.70668820e-05 4.23211932e-05]]\n\n  [[4.91176070e-05 8.48647614e-05 3.57711033e-05 ... 5.98152583e-05\n    3.76199714e-05 3.08557901e-05]\n   [8.19507914e-05 9.83260834e-05 2.04623648e-04 ... 2.14912274e-04\n    8.68732895e-05 9.03332475e-05]\n   [3.80441961e-05 6.98229051e-05 1.91525196e-05 ... 6.81685415e-05\n    3.99007877e-05 5.93220684e-05]\n   [9.27948349e-05 1.04018451e-04 1.57161601e-04 ... 1.60981246e-04\n    8.07249453e-05 1.96579422e-04]\n   [4.44840443e-05 5.09071651e-05 1.27502717e-05 ... 6.17536207e-05\n    3.69192749e-05 6.03136759e-05]\n   [2.31328067e-05 3.41935229e-05 5.55270744e-05 ... 5.69396761e-05\n    6.26930560e-05 8.06389144e-05]]\n\n  [[5.62698006e-05 5.05288263e-05 3.59366240e-05 ... 4.15413051e-05\n    3.25498513e-05 2.36634878e-05]\n   [1.17071235e-04 1.00765530e-04 1.72930231e-04 ... 2.15797671e-04\n    1.06377978e-04 1.62926197e-04]\n   [2.75336024e-05 7.36890797e-05 3.33148710e-05 ... 6.73539689e-05\n    4.51848173e-05 4.43393365e-05]\n   [1.15800169e-04 1.24254220e-04 1.58774303e-04 ... 1.89393555e-04\n    1.03432583e-04 1.85120778e-04]\n   [3.33542266e-05 4.99772104e-05 1.96423334e-05 ... 4.34169378e-05\n    3.88345434e-05 3.74901356e-05]\n   [5.58320789e-05 6.56329066e-05 7.16872601e-05 ... 1.14351569e-04\n    9.06690766e-05 1.25536098e-04]]]\n\n\n [[[7.94255975e-05 1.00031793e-04 9.11466050e-05 ... 9.47905428e-05\n    6.83144099e-05 7.01105600e-05]\n   [7.03926198e-05 1.42235280e-04 1.19707314e-04 ... 1.22947371e-04\n    2.89006784e-05 7.38342569e-05]\n   [5.98913502e-05 5.47436866e-05 1.94158292e-05 ... 5.04386408e-05\n    9.89965993e-05 1.08571374e-04]\n   [1.00645062e-04 1.26191619e-04 9.88165411e-05 ... 1.41092270e-04\n    1.14366660e-04 1.38523959e-04]\n   [5.47830205e-05 5.42724556e-05 5.47727723e-05 ... 3.83369006e-05\n    6.25324537e-05 8.31627331e-05]\n   [3.31109441e-05 6.14118981e-05 2.27725468e-05 ... 6.44888132e-05\n    5.18866909e-05 3.66817731e-05]]\n\n  [[2.90737789e-05 6.04561392e-05 1.07903114e-04 ... 9.68607492e-05\n    1.13068627e-05 5.90899472e-05]\n   [8.97428472e-05 1.22459896e-04 1.27693042e-04 ... 1.31844965e-04\n    2.99396161e-05 4.67431419e-05]\n   [4.63736942e-05 2.52284972e-05 2.38154753e-05 ... 7.76560482e-05\n    6.20325227e-05 1.24273662e-04]\n   [1.09598535e-04 1.15565796e-04 1.16772302e-04 ... 1.11568093e-04\n    1.00686018e-04 1.29021690e-04]\n   [3.33385906e-05 4.73809014e-05 4.42307573e-05 ... 4.18129603e-05\n    5.78089421e-05 9.89681794e-05]\n   [5.02356488e-05 5.07207515e-05 1.59657648e-05 ... 2.98810173e-05\n    6.93399707e-05 3.11126605e-05]]\n\n  [[1.71567317e-05 1.08773747e-04 7.64070937e-05 ... 7.07606305e-05\n    3.93139235e-05 6.85873456e-05]\n   [1.05879917e-04 1.21271383e-04 1.20277648e-04 ... 1.22651691e-04\n    7.62443960e-05 4.87059042e-05]\n   [3.49315669e-05 1.37859033e-05 3.67590510e-05 ... 1.01932084e-04\n    4.02132428e-05 1.07330932e-04]\n   [9.38637168e-05 9.21779647e-05 1.61563541e-04 ... 1.25991690e-04\n    7.17844305e-05 1.25115024e-04]\n   [2.98173327e-05 4.66453021e-05 4.38489769e-05 ... 6.51805458e-05\n    5.41089721e-05 1.00165264e-04]\n   [4.56034322e-05 2.27330638e-05 2.46814197e-05 ... 3.04321056e-05\n    3.08137933e-05 2.45618830e-05]]\n\n  [[5.69973454e-05 7.68413520e-05 2.87634830e-05 ... 5.20219110e-05\n    3.28806600e-05 6.44352622e-05]\n   [1.13828544e-04 1.32101530e-04 1.28827131e-04 ... 1.04796374e-04\n    1.05099854e-04 9.28364461e-05]\n   [3.72420072e-05 2.66034258e-05 3.79836674e-05 ... 9.16323188e-05\n    4.81699171e-05 6.84881234e-05]\n   [9.37656732e-05 1.20010918e-04 2.02699972e-04 ... 1.40149263e-04\n    8.89479488e-05 1.41937548e-04]\n   [4.27577179e-05 2.32089587e-05 2.87554467e-05 ... 7.29583408e-05\n    3.18220664e-05 7.99489571e-05]\n   [1.55289745e-05 4.02803380e-05 6.29660572e-05 ... 4.55934278e-05\n    4.81075440e-05 3.36433550e-05]]\n\n  [[5.56066188e-05 4.02337391e-05 2.24064261e-05 ... 4.35510628e-05\n    2.86878931e-05 3.40758816e-05]\n   [1.17033487e-04 1.18631106e-04 1.23803227e-04 ... 1.27963591e-04\n    9.26719949e-05 1.52292909e-04]\n   [3.92225338e-05 4.71728454e-05 3.95636234e-05 ... 6.33122545e-05\n    7.05552520e-05 4.54165674e-05]\n   [1.29661363e-04 1.32487985e-04 1.97457412e-04 ... 1.79873416e-04\n    9.77569580e-05 1.87260783e-04]\n   [3.20116778e-05 2.44838029e-05 2.73974838e-05 ... 5.67754396e-05\n    4.06155268e-05 4.10678731e-05]\n   [5.68266150e-05 7.12955371e-05 8.88479044e-05 ... 1.12000038e-04\n    8.27095282e-05 9.48692541e-05]]]\n\n\n [[[6.97007345e-05 8.83296598e-05 1.01225705e-04 ... 1.23252423e-04\n    5.36865373e-05 5.51827397e-05]\n   [6.09270137e-05 9.01092790e-05 8.61371955e-05 ... 1.51321190e-04\n    6.35995239e-05 9.14518605e-05]\n   [8.73087483e-05 9.57400916e-05 1.01798505e-04 ... 1.30906737e-05\n    9.03566470e-05 1.08179171e-04]\n   [9.57054508e-05 1.32492714e-04 1.16235184e-04 ... 1.52646739e-04\n    8.78128631e-05 1.51974498e-04]\n   [7.74362707e-05 7.80894334e-05 1.12887989e-04 ... 5.52391575e-05\n    6.63801766e-05 8.51678633e-05]\n   [3.09695679e-05 5.74160222e-05 1.97381232e-05 ... 4.20714641e-05\n    4.45201731e-05 4.82048345e-05]]\n\n  [[2.95207283e-05 7.09279557e-05 7.05109705e-05 ... 8.80843290e-05\n    3.57189783e-05 5.72284589e-05]\n   [8.15534295e-05 8.38515625e-05 7.15899878e-05 ... 1.77409442e-04\n    6.59198267e-05 7.50667605e-05]\n   [7.43491037e-05 8.67550989e-05 1.07635889e-04 ... 1.64140256e-05\n    7.52690248e-05 1.24323284e-04]\n   [1.12006826e-04 1.26389481e-04 1.53900706e-04 ... 1.54942478e-04\n    7.18320080e-05 1.21802797e-04]\n   [7.45377256e-05 9.38841476e-05 1.04683051e-04 ... 2.54759107e-05\n    8.32038713e-05 1.05181702e-04]\n   [3.67183566e-05 4.59241601e-05 2.64841819e-05 ... 4.15100549e-05\n    3.59766527e-05 3.40424922e-05]]\n\n  [[2.73782734e-05 1.03271625e-04 4.08641281e-05 ... 4.33135428e-05\n    5.82964531e-05 7.81839772e-05]\n   [1.03297498e-04 1.02079146e-04 4.77797221e-05 ... 1.58537325e-04\n    1.07000356e-04 7.62073541e-05]\n   [5.25053292e-05 7.36135698e-05 1.26827988e-04 ... 4.02856203e-05\n    6.59176294e-05 1.20228440e-04]\n   [1.25199993e-04 1.22856218e-04 1.89343133e-04 ... 1.57814284e-04\n    7.84560980e-05 1.19099015e-04]\n   [6.90588495e-05 9.44164130e-05 9.40396785e-05 ... 1.66354039e-05\n    8.32905935e-05 1.22159239e-04]\n   [4.12184781e-05 2.29975794e-05 3.94601084e-05 ... 5.21360053e-05\n    2.38840803e-05 1.60035215e-05]]\n\n  [[4.78376278e-05 6.28653579e-05 1.65167803e-05 ... 4.76787645e-05\n    3.33302669e-05 8.62481320e-05]\n   [7.87942699e-05 1.04985018e-04 3.92450274e-05 ... 1.25676786e-04\n    1.32528221e-04 9.20403909e-05]\n   [6.31012153e-05 7.05675411e-05 1.16729265e-04 ... 8.47776828e-05\n    5.79598163e-05 1.11623056e-04]\n   [1.34476606e-04 1.55416812e-04 2.02190466e-04 ... 1.48415013e-04\n    1.15304116e-04 1.60755895e-04]\n   [5.89800038e-05 6.57360215e-05 7.81449926e-05 ... 3.30975199e-05\n    4.14709102e-05 1.18656819e-04]\n   [3.05099475e-05 5.07631448e-05 6.70237714e-05 ... 6.01925058e-05\n    4.98473455e-05 2.60282141e-05]]\n\n  [[4.58383511e-05 2.51578731e-05 2.08283236e-05 ... 5.21294351e-05\n    2.09934478e-05 4.59357034e-05]\n   [7.29511376e-05 1.02574602e-04 5.16357977e-05 ... 1.39255339e-04\n    1.10546549e-04 1.17425210e-04]\n   [6.80937665e-05 6.23746455e-05 8.27730764e-05 ... 8.95151097e-05\n    6.29002388e-05 9.96276067e-05]\n   [1.60334486e-04 1.60190903e-04 1.80794508e-04 ... 1.67195205e-04\n    1.20928009e-04 2.13442821e-04]\n   [4.64886289e-05 4.35170150e-05 6.57862693e-05 ... 4.62867210e-05\n    3.24213179e-05 8.09816192e-05]\n   [6.48837158e-05 8.65328693e-05 8.06303942e-05 ... 1.08743552e-04\n    8.14388623e-05 8.45206450e-05]]]\n\n\n [[[5.11714788e-05 7.34252753e-05 8.70582298e-05 ... 1.33599591e-04\n    4.76690766e-05 5.06014294e-05]\n   [5.10147438e-05 1.00263627e-04 8.72062083e-05 ... 8.53412203e-05\n    9.93638314e-05 9.74022623e-05]\n   [1.07637767e-04 1.05783358e-04 1.22691737e-04 ... 1.05340019e-04\n    1.18985226e-04 1.44657155e-04]\n   [8.84642432e-05 1.14808747e-04 1.11536305e-04 ... 1.73914901e-04\n    9.02015672e-05 1.50303764e-04]\n   [7.32840635e-05 8.71554439e-05 8.29239070e-05 ... 1.41877288e-04\n    1.00530946e-04 1.13730348e-04]\n   [3.35504665e-05 4.20877986e-05 2.08271140e-05 ... 2.88562351e-05\n    4.31414737e-05 4.50939442e-05]]\n\n  [[3.19973406e-05 7.36607326e-05 4.13674643e-05 ... 7.49157844e-05\n    4.81334246e-05 4.49164108e-05]\n   [4.93372427e-05 8.57034174e-05 7.72931598e-05 ... 1.14695817e-04\n    9.50572721e-05 9.58834789e-05]\n   [1.22723344e-04 1.33148904e-04 1.38052652e-04 ... 8.81975939e-05\n    1.22422396e-04 1.57714094e-04]\n   [9.99662079e-05 1.15849463e-04 1.34539456e-04 ... 2.09289981e-04\n    8.24170929e-05 1.35471812e-04]\n   [8.46190960e-05 9.35473945e-05 7.59524482e-05 ... 9.90424160e-05\n    1.25039049e-04 1.12487236e-04]\n   [3.18128805e-05 4.04709972e-05 3.35607292e-05 ... 4.71797321e-05\n    3.77695578e-05 3.41400992e-05]]\n\n  [[2.79368232e-05 8.66273112e-05 2.26827342e-05 ... 3.50802329e-05\n    4.75566485e-05 6.63000683e-05]\n   [5.67304778e-05 7.80563350e-05 5.74834703e-05 ... 1.27402367e-04\n    8.98940852e-05 9.88819374e-05]\n   [1.19086610e-04 1.51008586e-04 1.31831112e-04 ... 6.97933210e-05\n    1.40642922e-04 2.17601468e-04]\n   [1.16683274e-04 1.27152758e-04 1.38855918e-04 ... 2.07893303e-04\n    1.03397731e-04 1.27452833e-04]\n   [9.43465784e-05 9.46948494e-05 6.88234359e-05 ... 6.33447926e-05\n    1.10984714e-04 1.38629752e-04]\n   [4.04771345e-05 2.83458430e-05 4.45328551e-05 ... 7.20149328e-05\n    2.93570556e-05 2.09703467e-05]]\n\n  [[3.94542112e-05 5.17739354e-05 1.99529532e-05 ... 4.07517509e-05\n    2.55136401e-05 7.06648498e-05]\n   [5.13321938e-05 6.65010230e-05 5.04915843e-05 ... 1.20101875e-04\n    8.06597382e-05 8.46056937e-05]\n   [1.14264432e-04 1.43830883e-04 1.22574813e-04 ... 7.58875540e-05\n    1.24758910e-04 2.23385563e-04]\n   [1.20349279e-04 1.47329454e-04 1.28305575e-04 ... 1.97432644e-04\n    1.32067362e-04 1.58951938e-04]\n   [8.08458644e-05 8.57377527e-05 5.83845831e-05 ... 4.34552639e-05\n    8.05063901e-05 1.47307335e-04]\n   [4.07586558e-05 5.36871776e-05 4.88132391e-05 ... 9.56578151e-05\n    5.33931634e-05 3.95252209e-05]]\n\n  [[4.02430742e-05 2.85440874e-05 2.88340161e-05 ... 4.95499189e-05\n    1.87792521e-05 4.11123037e-05]\n   [4.22528174e-05 8.73983736e-05 6.47804554e-05 ... 1.09328808e-04\n    8.47322954e-05 6.36146724e-05]\n   [9.08110014e-05 1.13577575e-04 1.00082390e-04 ... 9.03216933e-05\n    9.46245200e-05 1.94210588e-04]\n   [1.35444090e-04 1.52253851e-04 1.22448735e-04 ... 1.69362684e-04\n    1.34132337e-04 1.77765993e-04]\n   [6.01693791e-05 6.75612318e-05 5.97582002e-05 ... 4.13363268e-05\n    6.14171222e-05 1.30753077e-04]\n   [5.65338160e-05 7.87293466e-05 5.11020917e-05 ... 1.10542147e-04\n    8.03607327e-05 7.90461709e-05]]]]\ntensor_name:  Variable_3\n[-0.02977848 -0.04359511  0.03260007  0.04227847  0.00893433  0.03055854\n  0.08610967 -0.08058584 -0.01071703 -0.00787995  0.02670457 -0.04383116\n  0.0981831   0.03120658 -0.07465172 -0.00929568]\ntensor_name:  Variable_3/Adam\n[-0.00397749 -0.00235758 -0.00030895  0.00464016 -0.00164999  0.00425833\n  0.00121783 -0.00086728 -0.00162692 -0.01548912 -0.0057496   0.\n  0.00282698  0.00023993  0.00272473  0.00196848]\ntensor_name:  Variable_3/Adam_1\n[1.5127719e-04 1.8826874e-04 1.9949616e-04 1.5973010e-04 1.6467679e-04\n 2.0516045e-04 1.7305938e-04 2.1285920e-04 1.2946909e-04 3.4511133e-04\n 3.4529122e-04 7.8515150e-17 1.0812257e-04 2.0344670e-04 1.3934301e-04\n 2.3513399e-04]\ntensor_name:  Variable_4\n[[ 0.0497234   0.08995651 -0.0704671  ... -0.01273509 -0.14883466\n   0.08388301]\n [ 0.07063604 -0.09568534  0.01583056 ...  0.04096968 -0.06577712\n   0.02781479]\n [ 0.05305891  0.06983822  0.1688182  ... -0.0738427  -0.0387717\n   0.09204298]\n ...\n [ 0.05981065  0.11983317  0.00870939 ...  0.01591795 -0.04650053\n  -0.13415174]\n [-0.01803823  0.09948989  0.12170102 ... -0.01656975 -0.01430935\n  -0.00276769]\n [-0.10834264 -0.12396371 -0.04116779 ... -0.01753788 -0.0708644\n   0.0660753 ]]\ntensor_name:  Variable_5\n[[ 0.02798212 -0.03140401  0.19921993 ...  0.09243807 -0.03340637\n   0.1067675 ]\n [ 0.04050186  0.02894804  0.06508969 ...  0.1024362   0.13313282\n  -0.04505613]\n [-0.06668293 -0.11641965 -0.07610011 ...  0.04776708  0.02209704\n  -0.14246143]\n ...\n [-0.00802007  0.09092643 -0.06064037 ...  0.11304015  0.08869578\n  -0.09852991]\n [ 0.12781072 -0.08359092  0.06969593 ...  0.07705478  0.02759852\n  -0.15290588]\n [-0.02306807  0.0715692   0.0962269  ... -0.06893918  0.06837\n  -0.06993473]]\ntensor_name:  Variable_6\n[[-0.04210259  0.00544306  0.00045602 ...  0.01365809  0.13561897\n   0.02985275]\n [ 0.15487348  0.00392846 -0.01796473 ... -0.09591769  0.10745247\n   0.0376702 ]\n [-0.02979599  0.05301732 -0.17119412 ... -0.19099982 -0.15504037\n  -0.06792362]\n ...\n [-0.031644    0.0272097  -0.16374825 ... -0.09258689 -0.08971024\n  -0.18893372]\n [-0.02546909 -0.08072146  0.03378111 ... -0.09163078  0.0068016\n  -0.02144264]\n [ 0.13247998 -0.11558212  0.18100354 ...  0.04064442  0.09319848\n   0.00722969]]\ntensor_name:  beta1_power\n0.0\ntensor_name:  beta2_power\n8.098883e-08\ntensor_name:  fully_connected/biases\n[ 0.05982996 -0.0107144  -0.03706979  0.30627865  0.04418329 -0.01948053\n  0.04205796 -0.01280025 -0.00520626  0.07331876  0.07829714  0.01431748\n  0.03068637  0.00044253 -0.03321817  0.06119445 -0.0313809  -0.01129788\n -0.01090661  0.11358038  0.15293637 -0.04470861 -0.02163248 -0.01474439\n -0.01041425 -0.01351929  0.03775243 -0.10466227 -0.03311187 -0.01647332\n -0.1195064  -0.02048655  0.06828479 -0.02270313  0.08973955 -0.14945953\n -0.02891085 -0.00896126 -0.01093255 -0.01326986  0.0402865  -0.01239394\n -0.01192511 -0.01584158  0.02204007 -0.06090788 -0.03984092 -0.01954914\n -0.02796547 -0.02195638 -0.04139901 -0.01493302 -0.01235235 -0.01798377\n -0.07434315 -0.04704422 -0.16729924 -0.00138626  0.01290413 -0.10793693\n -0.04245124  0.00701246 -0.17722608  0.02570269 -0.01703644 -0.09320072\n -0.26235858  0.05550163 -0.11576119 -0.00740394  0.13012284 -0.04569048\n -0.03452189  0.1121934  -0.0572492  -0.01404126 -0.03287392 -0.06503196\n -0.0125038  -0.07042188 -0.01664526  0.09745234 -0.00709938 -0.01457941\n -0.03015264 -0.00846668  0.0237138   0.14645724 -0.03654199 -0.01813826\n -0.02392741 -0.03331358  0.15011369  0.00545061 -0.00540288 -0.07183721\n  0.11690256 -0.00892785  0.05446887 -0.06629883 -0.01087226  0.14095671\n  0.06478049  0.03687727  0.11186975 -0.02780683 -0.00843795 -0.0380206\n -0.00041417 -0.01213011 -0.01697153  0.07425954 -0.03483002 -0.06701429\n -0.01142335  0.10143413  0.10824908  0.03093102 -0.01449754 -0.0130068 ]\ntensor_name:  fully_connected/biases/Adam\n[-1.61960168e-04 -7.96953915e-04 -4.49594712e-16  1.28650444e-03\n -9.50066096e-05  0.00000000e+00  7.48323364e-05 -5.89782889e-09\n -6.80625322e-04  1.73763640e-03 -4.45685611e-04 -4.96197245e-05\n -1.67606014e-03  1.30266155e-04  0.00000000e+00  4.99710906e-04\n -4.59572882e-04  0.00000000e+00  0.00000000e+00  1.16208883e-03\n  8.12848448e-04  0.00000000e+00  0.00000000e+00  2.32948829e-35\n  0.00000000e+00  0.00000000e+00 -5.57690393e-04 -1.33710168e-03\n  0.00000000e+00  0.00000000e+00  9.83602804e-05  0.00000000e+00\n -7.93217099e-04 -8.56159497e-24  1.15445895e-04 -4.68003622e-04\n  0.00000000e+00 -7.82639088e-35  1.81873853e-04  0.00000000e+00\n  4.89671249e-04  0.00000000e+00  0.00000000e+00  0.00000000e+00\n -4.35998198e-04  3.79521953e-04  0.00000000e+00 -4.65727862e-06\n  0.00000000e+00 -2.33114383e-06  0.00000000e+00  0.00000000e+00\n  0.00000000e+00 -8.73412573e-05  2.95808597e-04  0.00000000e+00\n -4.36795322e-04  1.89772795e-03 -4.63627621e-05  5.71547316e-05\n  0.00000000e+00 -2.32372375e-04  4.80361981e-04 -1.15881441e-03\n  0.00000000e+00 -1.40545785e-03  8.59032079e-05 -4.05357394e-04\n  5.46530755e-05  0.00000000e+00 -6.88006170e-04 -1.60335819e-03\n -9.37200457e-05 -1.66153171e-04 -1.00812128e-25  0.00000000e+00\n -1.75522152e-09 -7.23670169e-12  0.00000000e+00  6.07605209e-04\n  0.00000000e+00  2.02251412e-03  0.00000000e+00  0.00000000e+00\n -3.82395228e-04  0.00000000e+00 -8.22447881e-04 -4.33988665e-04\n  0.00000000e+00  0.00000000e+00 -5.15562249e-07  0.00000000e+00\n  1.13361445e-03 -1.84970297e-04 -9.59445752e-05 -1.25394040e-03\n  8.60272674e-04  0.00000000e+00 -5.59747568e-05 -7.74982800e-06\n  0.00000000e+00 -3.61801765e-04 -1.15176947e-04  4.40585456e-04\n  6.66523920e-05  0.00000000e+00  0.00000000e+00 -2.32599836e-04\n -3.50620481e-04  0.00000000e+00  0.00000000e+00 -5.21156035e-05\n  0.00000000e+00  2.65100571e-05  0.00000000e+00  1.35023077e-03\n  1.74761095e-04 -1.37001148e-03  0.00000000e+00  0.00000000e+00]\ntensor_name:  fully_connected/biases/Adam_1\n[3.85820886e-06 1.31991083e-05 1.39924435e-11 7.34769947e-06\n 1.64892845e-06 2.05377043e-13 4.62755736e-07 5.97748630e-12\n 5.88378361e-06 8.24251492e-06 5.99563464e-06 1.06541142e-06\n 1.27482926e-05 1.03992852e-06 3.46581081e-13 1.04626051e-05\n 8.81480992e-06 2.96731464e-14 2.49368465e-14 6.75202136e-06\n 6.59525540e-06 7.15702725e-13 1.65878094e-15 3.93567605e-17\n 7.79070327e-15 9.78671439e-15 4.94093456e-06 8.39977474e-06\n 6.22566768e-17 1.31726191e-15 3.00472038e-06 2.72733080e-20\n 6.73280238e-06 1.19670958e-14 7.41542135e-06 7.11419307e-06\n 6.31982463e-14 3.95834808e-17 6.44860484e-06 6.11245953e-15\n 5.04589389e-06 1.87627455e-18 9.79841869e-15 2.06909595e-16\n 1.44107480e-05 9.53781455e-06 2.48090789e-17 3.82269462e-07\n 3.78236316e-16 1.27761739e-08 3.06101817e-14 2.13212936e-16\n 3.68605911e-15 1.59848405e-05 7.42781003e-06 1.27597363e-10\n 1.54522841e-05 7.60189823e-06 4.05635910e-06 1.74476907e-06\n 2.35673948e-13 1.66050609e-06 5.36179778e-06 5.25013229e-06\n 4.98905053e-16 8.44214992e-06 2.66586449e-06 9.07552931e-06\n 5.20962249e-06 5.57179501e-15 9.47177978e-06 6.79505092e-06\n 7.09599362e-06 3.82505687e-06 9.80581762e-12 9.48781459e-14\n 1.24615241e-07 1.30755780e-07 9.64536322e-16 4.91985838e-06\n 2.83405752e-19 9.13227450e-06 1.26180910e-15 3.60192092e-17\n 5.34390529e-06 1.43002005e-16 8.27556960e-06 4.19063099e-06\n 3.26446871e-14 4.17574776e-16 1.96383965e-07 1.10686477e-11\n 1.35748305e-05 3.81236578e-06 7.23117500e-06 7.35742333e-06\n 5.52993561e-06 5.31523233e-17 4.46409877e-06 6.72456281e-07\n 2.03528901e-16 4.10033454e-06 7.98579913e-06 9.00888244e-06\n 5.77916398e-06 1.21433836e-17 8.75879607e-16 7.03490150e-06\n 4.81026927e-06 1.26862528e-15 1.95985213e-15 6.31413377e-06\n 3.83525973e-15 7.12399560e-06 1.06647086e-16 1.14199665e-05\n 4.81405186e-06 9.14087013e-06 1.15853090e-16 8.89138783e-22]\ntensor_name:  fully_connected/weights\n[[-0.046461    0.07485351  0.02398093 ... -0.06468804  0.00579012\n   0.02478239]\n [ 0.0845456   0.20413226 -0.04180497 ...  0.05534326 -0.07312082\n   0.07769845]\n [ 0.02301744 -0.08503175  0.02286316 ...  0.1545687  -0.12639698\n   0.06067302]\n ...\n [-0.04215425 -0.08027089 -0.04923079 ...  0.01968566 -0.09263171\n   0.00790322]\n [-0.03099342  0.08968414 -0.07056591 ... -0.02709257 -0.09532044\n  -0.03355517]\n [-0.22888875 -0.20240751 -0.04000141 ... -0.09818557 -0.10556652\n  -0.09622817]]\ntensor_name:  fully_connected/weights/Adam\n[[ 5.9915197e-05 -2.7884395e-04 -2.1809398e-16 ... -8.5691114e-05\n   0.0000000e+00  0.0000000e+00]\n [ 1.5818480e-04 -2.1045113e-03 -1.0906872e-15 ... -2.3752116e-03\n   0.0000000e+00  0.0000000e+00]\n [ 2.9411024e-04  6.7367022e-05 -1.0172062e-15 ... -1.3649095e-03\n   0.0000000e+00  0.0000000e+00]\n ...\n [ 5.2056409e-04  9.0138907e-05 -1.2073491e-15 ... -4.3111152e-04\n   0.0000000e+00  0.0000000e+00]\n [-7.3058647e-04 -1.6224573e-03  0.0000000e+00 ... -3.2752936e-03\n   0.0000000e+00  0.0000000e+00]\n [-3.4384063e-04 -7.1407913e-04 -7.9688082e-30 ... -3.5603839e-04\n   0.0000000e+00  0.0000000e+00]]\ntensor_name:  fully_connected/weights/Adam_1\n[[6.03052968e-06 1.54699992e-05 4.71832758e-14 ... 1.28110205e-05\n  1.60745462e-17 1.20118914e-21]\n [2.31731610e-05 6.68095308e-05 1.36437958e-10 ... 5.10507525e-05\n  9.48857226e-19 6.18984059e-21]\n [5.70264274e-06 2.55413925e-05 3.13879721e-11 ... 1.19504939e-05\n  5.84962484e-18 3.96285752e-21]\n ...\n [5.56864234e-06 2.01383027e-05 3.25151893e-14 ... 1.23859345e-05\n  4.04721772e-17 3.58485537e-21]\n [1.87683509e-05 6.08695082e-05 3.92063552e-12 ... 4.33353744e-05\n  2.78237816e-17 1.18352019e-22]\n [3.05138724e-06 8.77371167e-06 2.77096444e-14 ... 6.56721613e-06\n  3.00554587e-17 5.27584998e-23]]\ntensor_name:  fully_connected_1/biases\n[ 0.20153208 -0.01904408 -0.05343294 -0.03442784 -0.00678117  0.07065578\n -0.0265818   0.08432743 -0.01890052 -0.09892295 -0.05040099 -0.02291113\n  0.01099625 -0.17186113  0.05816001  0.07978354  0.00897458  0.08911546\n -0.03653305 -0.14225167 -0.02929898 -0.04590479 -0.01610879  0.08477888\n  0.08284137  0.12603034  0.20388772  0.0350514  -0.09474972  0.10458224\n -0.03060333  0.09134515  0.0425282  -0.0129749   0.05381293  0.0689132\n -0.06446168 -0.06608406 -0.00563185 -0.01801321  0.1411704   0.06707723\n  0.00661034  0.02616187  0.02214328  0.00041198  0.07870038  0.06854306\n -0.07798225  0.16618975  0.26090455  0.04800326  0.00522687 -0.01030711\n  0.07428992  0.02820599  0.03962382  0.12160342 -0.04740121  0.1220111\n -0.04083958  0.10713299 -0.1178079   0.04545819  0.11380555  0.11629052\n  0.1323157   0.15770875  0.16525063 -0.034428   -0.07416793  0.06500874\n  0.0444186  -0.12546226 -0.20161532 -0.03891987  0.06947082  0.02718491\n -0.07038366 -0.0192457  -0.10053471  0.00077569  0.01030593  0.11599437]\ntensor_name:  fully_connected_1/biases/Adam\n[-5.2211178e-04  0.0000000e+00  6.2338546e-07  0.0000000e+00\n  1.5851347e-04 -1.3324549e-05  0.0000000e+00 -3.9999236e-04\n -8.1550511e-15 -9.2738097e-05  0.0000000e+00  0.0000000e+00\n  3.8994939e-04 -4.5441685e-04  1.3121605e-04 -1.3105410e-04\n -6.7555825e-06 -2.0200484e-04 -2.3405626e-04  2.7467809e-06\n -4.8617733e-04 -1.6492391e-04 -2.8507717e-04 -6.0463947e-04\n  6.0180837e-04  3.2971546e-04  2.2870442e-04  3.1170119e-05\n -7.4049963e-06 -4.5737261e-06  3.2327641e-04  3.0057810e-04\n -4.1086753e-04 -1.3148018e-04 -6.7341357e-04 -4.9746333e-04\n -1.0250695e-05 -7.3880459e-05 -8.7719534e-05 -7.8700119e-05\n  5.4159056e-04  1.8109448e-04 -3.0720397e-04 -3.6106660e-06\n -5.1985303e-04  1.5727725e-04 -8.3374340e-05 -3.9536858e-04\n -3.3216091e-04  6.3538243e-04  4.5032112e-04  3.1674534e-04\n -7.1422066e-05 -2.6975392e-04  3.8534767e-04  1.2024522e-04\n -6.3507730e-07 -2.3191689e-04  0.0000000e+00  2.3812066e-04\n  0.0000000e+00 -1.5313944e-05  9.1950508e-04 -9.3899034e-05\n  9.5031492e-04  3.7233302e-04  4.0875768e-04  6.8919681e-04\n -3.8912722e-06 -5.8039417e-04  3.8220661e-04  4.7674318e-04\n -2.5743866e-04 -9.9444704e-04  2.2608000e-04 -3.7084117e-11\n  8.3185587e-05  3.2044511e-04  4.0797740e-06 -4.0905170e-06\n -4.0794948e-05  3.1945959e-04 -6.7939793e-05  2.3284760e-04]\ntensor_name:  fully_connected_1/biases/Adam_1\n[2.2638253e-06 5.8316206e-14 6.2480021e-09 3.0976605e-14 2.3546334e-06\n 7.7573748e-07 2.2832226e-17 2.6929897e-06 3.3739708e-14 4.7299732e-06\n 1.7688374e-10 4.1178397e-15 1.2329640e-06 2.6721655e-06 2.3511020e-06\n 3.0055789e-06 3.3047293e-08 2.1482958e-06 1.1226266e-06 2.3686555e-06\n 2.0866519e-06 1.6504013e-06 2.2557110e-06 3.7052282e-06 3.3872273e-06\n 3.7872296e-06 2.2017466e-06 7.5877290e-07 4.5394495e-07 1.1224513e-06\n 1.6547096e-06 2.4637384e-06 1.3164739e-06 4.5805137e-07 2.5697314e-06\n 4.6680948e-06 1.8669512e-06 2.6406567e-06 1.4107756e-08 3.1689237e-06\n 1.7357953e-06 1.3948561e-06 2.2318707e-06 5.8692628e-08 2.8551906e-06\n 2.3812268e-06 2.2434476e-06 3.2995965e-06 2.5345998e-06 2.4218486e-06\n 3.3809567e-06 3.1881743e-06 1.0176911e-06 2.1690751e-06 2.7323174e-06\n 1.6982677e-06 5.1508016e-07 2.3576542e-06 1.3820072e-12 3.0605643e-06\n 4.3542796e-21 3.0541571e-06 3.3890778e-06 1.4023686e-06 3.0234207e-06\n 2.1376309e-06 3.1584459e-06 1.6338232e-06 1.5150154e-06 2.0181012e-06\n 3.9922420e-06 2.5519596e-06 2.3573148e-06 3.2492414e-06 2.0961168e-06\n 9.4748306e-12 1.2412446e-06 1.7666504e-06 1.8617963e-07 1.5231907e-06\n 1.4365007e-06 2.4256046e-06 2.5949848e-06 3.0905933e-06]\ntensor_name:  fully_connected_1/weights\n[[ 3.57895911e-01  5.05031049e-02 -1.76887825e-01 ...  7.63226897e-02\n   2.12686330e-01 -7.10502043e-02]\n [-1.68833986e-01 -1.91435218e-04 -1.30115733e-01 ...  1.00499585e-01\n   3.04540128e-01  2.69284192e-02]\n [ 2.39067283e-02  5.40758995e-03 -7.36262426e-02 ...  5.96818551e-02\n  -9.71566886e-02 -1.44519314e-01]\n ...\n [-8.74935687e-02 -5.49488291e-02  5.50741106e-02 ... -3.20362777e-01\n   1.31428629e-01  7.61211012e-03]\n [ 1.23039171e-01 -7.94771239e-02 -4.39599417e-02 ... -6.16440624e-02\n  -1.80399939e-01  1.80761412e-01]\n [ 8.05328786e-02 -2.91017443e-02  8.19038898e-02 ...  1.43073633e-01\n   8.45221728e-02 -1.15503162e-01]]\ntensor_name:  fully_connected_1/weights/Adam\n[[-5.2814139e-04  0.0000000e+00 -4.0165592e-12 ...  4.4413292e-04\n  -5.6918911e-05  6.2090042e-04]\n [-3.9544047e-04  0.0000000e+00 -5.1840693e-10 ...  4.2244233e-04\n   6.1887346e-05  3.0087150e-04]\n [-7.8836565e-16  0.0000000e+00 -7.9469832e-22 ... -6.2036368e-32\n   0.0000000e+00  3.1124993e-16]\n ...\n [-1.0548282e-03  0.0000000e+00 -2.1650481e-13 ... -1.8315732e-04\n  -8.8075449e-04  1.1689120e-03]\n [ 0.0000000e+00  0.0000000e+00  0.0000000e+00 ...  0.0000000e+00\n   0.0000000e+00  0.0000000e+00]\n [ 0.0000000e+00  0.0000000e+00  0.0000000e+00 ...  0.0000000e+00\n   0.0000000e+00  0.0000000e+00]]\ntensor_name:  fully_connected_1/weights/Adam_1\n[[4.3297245e-05 5.9986653e-15 3.6235257e-08 ... 4.7997044e-05\n  5.5994002e-05 5.7301269e-05]\n [3.3580880e-05 0.0000000e+00 7.6899688e-08 ... 4.4106069e-05\n  5.7129517e-05 6.2619001e-05]\n [5.5581543e-13 8.8683704e-18 1.2108519e-15 ... 1.3123038e-12\n  2.2572782e-11 5.9037992e-12]\n ...\n [3.0163706e-05 1.5539655e-12 4.9339972e-09 ... 3.1361957e-05\n  6.6707660e-05 6.2891413e-05]\n [6.7682676e-18 8.4572780e-21 2.9966090e-23 ... 2.5420873e-18\n  5.4040883e-19 6.9517045e-19]\n [7.5357143e-22 0.0000000e+00 0.0000000e+00 ... 1.6109931e-32\n  8.8688580e-33 1.9770971e-31]]\ntensor_name:  fully_connected_2/biases\n[-0.08062983 -0.04602508  0.01691673 -0.03484508 -0.00512137  0.20894097\n -0.05439782  0.03768151  0.17006196 -0.06058607  0.0307238  -0.14211424\n  0.00176734 -0.05384041 -0.05761675 -0.12161884 -0.21120405 -0.13242969\n -0.0061374  -0.09585945  0.03051673  0.0811536  -0.00161747 -0.11160298\n -0.05183016  0.05668986  0.02482221  0.09362968  0.02565625  0.04966795\n  0.12658477 -0.01588016  0.2042347   0.02733696 -0.02223983 -0.10947683\n -0.10149688 -0.08856115 -0.10126503  0.01897015 -0.07146402 -0.12520704\n -0.0783154 ]\ntensor_name:  fully_connected_2/biases/Adam\n[-1.6675402e-05  1.0265126e-04 -1.6802220e-03 -1.5521194e-04\n  5.5321427e-05  9.2638313e-04  1.2183893e-05  1.0989917e-03\n -3.5274160e-04  7.4665084e-05  3.2236105e-05 -2.0689578e-05\n -9.1132817e-05  3.0920050e-06  2.1635260e-05 -4.9637765e-06\n  4.4728431e-06 -1.1348378e-05 -8.3102001e-05 -3.0942820e-06\n -6.1103788e-06  5.9487211e-06  1.0643048e-04  9.3628178e-06\n -6.9418928e-07 -9.9175049e-06 -8.4219617e-04  3.8429084e-06\n -2.0892376e-06  1.4227367e-05  2.5019736e-04  5.6086673e-04\n -2.5458321e-05 -8.0846577e-05 -1.2313239e-05  6.0573625e-06\n  1.7239964e-06 -3.6596568e-05  6.0636835e-06  1.5086069e-05\n  1.2279645e-04 -8.1067601e-06  9.2807240e-06]\ntensor_name:  fully_connected_2/biases/Adam_1\n[8.8821878e-07 7.3322562e-06 1.0539602e-05 4.8408124e-06 4.5743968e-06\n 1.3088234e-05 5.7245984e-07 8.9821351e-06 6.5395552e-06 1.7672047e-06\n 2.4270680e-06 3.2411397e-06 1.9743029e-06 2.8697480e-07 3.3109282e-07\n 2.3124146e-06 3.6730964e-07 2.9414889e-07 2.9122448e-06 8.4592688e-07\n 2.0905316e-06 1.0745725e-06 3.5947463e-07 1.6246737e-06 8.0318102e-07\n 1.3844040e-06 3.0151880e-06 2.1178380e-06 1.9380575e-06 2.2515922e-06\n 1.2911247e-06 1.6835212e-06 6.0645823e-07 7.9624169e-07 3.7929902e-07\n 8.0828028e-07 1.2146431e-07 3.1658482e-07 1.0976465e-06 1.9056378e-07\n 8.1409462e-07 1.8792426e-07 5.9567395e-07]\ntensor_name:  fully_connected_2/weights\n[[ 0.21407336  0.2190603   0.17819995 ... -0.4365481  -0.06262873\n  -0.13632078]\n [ 0.1014801  -0.03813173  0.07780506 ... -0.18613368  0.16158049\n  -0.07611085]\n [ 0.15590543 -0.15237753  0.0331926  ... -0.14276738 -0.05179086\n  -0.20960507]\n ...\n [-0.36989766 -0.169318    0.0811526  ... -0.09805708 -0.28187025\n   0.11353408]\n [ 0.1244709   0.2692072   0.15945539 ...  0.10974737  0.04754673\n   0.06646097]\n [-0.37621137 -0.0277855   0.01000945 ... -0.43495142 -0.05781528\n   0.1733406 ]]\ntensor_name:  fully_connected_2/weights/Adam\n[[-4.1524589e-05  8.4271649e-04 -9.0893703e-03 ...  9.3991141e-04\n  -3.1270498e-05  5.0815499e-05]\n [ 0.0000000e+00  0.0000000e+00  0.0000000e+00 ...  0.0000000e+00\n   0.0000000e+00  0.0000000e+00]\n [ 8.9827612e-18  8.3764359e-15  2.8724913e-11 ...  2.2791656e-12\n   7.4212362e-18  2.0907343e-16]\n ...\n [ 6.3119352e-08 -7.4586736e-05 -6.3006515e-03 ...  5.6758936e-04\n   4.2428610e-07  1.6864331e-05]\n [ 1.3184798e-06  1.7141762e-04 -1.0905387e-02 ...  8.4232946e-04\n   2.7513259e-05  1.0457136e-04]\n [-1.4262788e-04 -5.0260707e-05 -1.4517721e-02 ...  1.9021482e-07\n  -8.5198510e-05  2.9634224e-05]]\ntensor_name:  fully_connected_2/weights/Adam_1\n[[2.5686159e-04 1.0041530e-03 1.2452577e-03 ... 1.0215163e-05\n  1.6661962e-06 1.4521584e-05]\n [5.0194587e-17 2.8911823e-16 3.5889215e-16 ... 4.7393591e-17\n  4.1540650e-17 5.5413660e-17]\n [2.4596407e-15 2.0538185e-16 5.7369135e-14 ... 2.1810843e-11\n  4.0545465e-09 1.9554875e-11]\n ...\n [8.7346493e-08 6.7597874e-05 5.4408505e-04 ... 6.7612455e-06\n  1.7251283e-06 2.8758152e-05]\n [7.6532146e-05 5.2712136e-04 6.7674374e-04 ... 4.7915997e-05\n  3.0313682e-05 7.9826743e-05]\n [3.8459011e-06 3.1058362e-04 9.9960552e-04 ... 1.8745492e-05\n  1.0493062e-05 1.5423777e-05]]\n&quot; 
+     ] 
+    } 
+   ], 
+   &quot;source&quot;: [ 
+    &quot;\n&quot;, 
+    &quot;from tensorflow.python.tools import inspect_checkpoint as chkp\n&quot;, 
+    &quot;\n&quot;, 
+    &quot;# print all tensors in checkpoint file\n&quot;, 
+    &quot;chkp.print_tensors_in_checkpoint_file('./lenet', tensor_name='', all_tensors=True)\n&quot; 
+   ] 
+  }, 
+  { 
+   &quot;cell_type&quot;: &quot;code&quot;, 
+   &quot;execution_count&quot;: 139, 
+   &quot;metadata&quot;: { 
+    &quot;collapsed&quot;: true 
+   }, 
+   &quot;outputs&quot;: [ 
+    { 
+     &quot;name&quot;: &quot;stdout&quot;, 
+     &quot;output_type&quot;: &quot;stream&quot;, 
+     &quot;text&quot;: [ 
+      &quot;INFO:tensorflow:Restoring parameters from ./lenet\n&quot; 
+     ] 
+    }, 
+    { 
+     &quot;name&quot;: &quot;stdout&quot;, 
+     &quot;output_type&quot;: &quot;stream&quot;, 
+     &quot;text&quot;: [ 
+      &quot;prediction result: [16  1 38 33 11]\nInput Classification : [16  1 38 33 11]\n&quot; 
+     ] 
+    }, 
+    { 
+     &quot;name&quot;: &quot;stdout&quot;, 
+     &quot;output_type&quot;: &quot;stream&quot;, 
+     &quot;text&quot;: [ 
+      &quot;Top 5\nTopKV2(values=array([[1.0000000e+00, 1.4952777e-10, 7.0987660e-11, 5.3996738e-11,\n        3.9136728e-13],\n       [7.4457115e-01, 2.5393954e-01, 1.4800681e-03, 8.9689374e-06,\n        2.3454989e-07],\n       [1.0000000e+00, 1.4018691e-08, 9.8915403e-14, 7.3024142e-15,\n        2.4140219e-15],\n       [9.9989426e-01, 7.7986660e-05, 2.5925227e-05, 1.7250936e-06,\n        1.7087503e-07],\n       [9.9961495e-01, 3.8210113e-04, 2.8144266e-06, 8.8769561e-11,\n        1.4802651e-12]], dtype=float32), indices=array([[16,  7, 40, 10, 12],\n       [ 1,  2,  5, 38,  6],\n       [38, 31, 10, 23, 36],\n       [33, 17, 14, 13,  9],\n       [11, 30,  1, 40,  0]]))\n&quot; 
+     ] 
+    } 
+   ], 
+   &quot;source&quot;: [ 
+    &quot;### Run the predictions here and use the model to output the prediction for each image.\n&quot;, 
+    &quot;### Make sure to pre-process the images with the same pre-processing pipeline used earlier.\n&quot;, 
+    &quot;### Feel free to use as many code cells as needed.  \n&quot;, 
+    &quot;\n&quot;, 
+    &quot;# import the inspect_checkpoint library\n&quot;, 
+    &quot;X_prediction = preprocess(prediction_images)\n&quot;, 
+    &quot;\n&quot;, 
+    &quot;with tf.Session() as sess:\n&quot;, 
+    &quot;    saver.restore(sess, './lenet')\n&quot;, 
+    &quot;    result_prediction = sess.run(prediction, feed_dict={x: X_prediction, y: labelled_classes})\n&quot;, 
+    &quot;    result_logits = sess.run(logits, feed_dict={x: X_prediction, y: labelled_classes})\n&quot;, 
+    &quot;    # print(\&quot;Logits are : {0}\&quot;.format(result_logits) )\n&quot;, 
+    &quot;    print(\&quot;prediction result: {0}\&quot;.format(result_prediction))\n&quot;, 
+    &quot;    print(\&quot;Input Classification : {0}\&quot;.format(labelled_classes))\n&quot;, 
+    &quot;    top_5 = sess.run(tf.nn.top_k(tf.nn.softmax(logits),5),feed_dict={x: X_prediction, y: labelled_classes})\n&quot;, 
+    &quot;    print(\&quot;Top 5\&quot;)\n&quot;, 
+    &quot;    print(top_5)\n&quot;, 
+    &quot;\n&quot;, 
+    &quot;\n&quot;, 
+    &quot;    \n&quot; 
+   ] 
+  }, 
+  { 
+   &quot;cell_type&quot;: &quot;markdown&quot;, 
+   &quot;metadata&quot;: {}, 
+   &quot;source&quot;: [ 
+    &quot;### Analyze Performance&quot; 
+   ] 
+  }, 
+  { 
+   &quot;cell_type&quot;: &quot;code&quot;, 
+   &quot;execution_count&quot;: 136, 
+   &quot;metadata&quot;: { 
+    &quot;collapsed&quot;: true 
+   }, 
+   &quot;outputs&quot;: [ 
+    { 
+     &quot;name&quot;: &quot;stdout&quot;, 
+     &quot;output_type&quot;: &quot;stream&quot;, 
+     &quot;text&quot;: [ 
+      &quot;Prediction accuracy = 1.0\n&quot; 
+     ] 
+    } 
+   ], 
+   &quot;source&quot;: [ 
+    &quot;### Calculate the accuracy for these 5 new images. \n&quot;, 
+    &quot;### For example, if the model predicted 1 out of 5 signs correctly, it's 20% accurate on these new images.\n&quot;, 
+    &quot;\n&quot;, 
+    &quot;accuracy = sum(result_prediction == labelled_classes) / len(result_prediction)\n&quot;, 
+    &quot;print(\&quot;Prediction accuracy = {0}\&quot;.format(accuracy))&quot; 
+   ] 
+  }, 
+  { 
+   &quot;cell_type&quot;: &quot;markdown&quot;, 
+   &quot;metadata&quot;: {}, 
+   &quot;source&quot;: [ 
+    &quot;### Output Top 5 Softmax Probabilities For Each Image Found on the Web&quot; 
+   ] 
+  }, 
+  { 
+   &quot;cell_type&quot;: &quot;markdown&quot;, 
+   &quot;metadata&quot;: {}, 
+   &quot;source&quot;: [ 
+    &quot;For each of the new images, print out the model's softmax probabilities to show the **certainty** of the model's predictions (limit the output to the top 5 probabilities for each image). [`tf.nn.top_k`](https://www.tensorflow.org/versions/r0.12/api_docs/python/nn.html#top_k) could prove helpful here. \n&quot;, 
+    &quot;\n&quot;, 
+    &quot;The example below demonstrates how tf.nn.top_k can be used to find the top k predictions for each image.\n&quot;, 
+    &quot;\n&quot;, 
+    &quot;`tf.nn.top_k` will return the values and indices (class ids) of the top k predictions. So if k=3, for each sign, it'll return the 3 largest probabilities (out of a possible 43) and the correspoding class ids.\n&quot;, 
+    &quot;\n&quot;, 
+    &quot;Take this numpy array as an example. The values in the array represent predictions. The array contains softmax probabilities for five candidate images with six possible classes. `tf.nn.top_k` is used to choose the three classes with the highest probability:\n&quot;, 
+    &quot;\n&quot;, 
+    &quot;```\n&quot;, 
+    &quot;# (5, 6) array\n&quot;, 
+    &quot;a = np.array([[ 0.24879643,  0.07032244,  0.12641572,  0.34763842,  0.07893497,\n&quot;, 
+    &quot;         0.12789202],\n&quot;, 
+    &quot;       [ 0.28086119,  0.27569815,  0.08594638,  0.0178669 ,  0.18063401,\n&quot;, 
+    &quot;         0.15899337],\n&quot;, 
+    &quot;       [ 0.26076848,  0.23664738,  0.08020603,  0.07001922,  0.1134371 ,\n&quot;, 
+    &quot;         0.23892179],\n&quot;, 
+    &quot;       [ 0.11943333,  0.29198961,  0.02605103,  0.26234032,  0.1351348 ,\n&quot;, 
+    &quot;         0.16505091],\n&quot;, 
+    &quot;       [ 0.09561176,  0.34396535,  0.0643941 ,  0.16240774,  0.24206137,\n&quot;, 
+    &quot;         0.09155967]])\n&quot;, 
+    &quot;```\n&quot;, 
+    &quot;\n&quot;, 
+    &quot;Running it through `sess.run(tf.nn.top_k(tf.constant(a), k=3))` produces:\n&quot;, 
+    &quot;\n&quot;, 
+    &quot;```\n&quot;, 
+    &quot;TopKV2(values=array([[ 0.34763842,  0.24879643,  0.12789202],\n&quot;, 
+    &quot;       [ 0.28086119,  0.27569815,  0.18063401],\n&quot;, 
+    &quot;       [ 0.26076848,  0.23892179,  0.23664738],\n&quot;, 
+    &quot;       [ 0.29198961,  0.26234032,  0.16505091],\n&quot;, 
+    &quot;       [ 0.34396535,  0.24206137,  0.16240774]]), indices=array([[3, 0, 5],\n&quot;, 
+    &quot;       [0, 1, 4],\n&quot;, 
+    &quot;       [0, 5, 1],\n&quot;, 
+    &quot;       [1, 3, 5],\n&quot;, 
+    &quot;       [1, 4, 3]], dtype=int32))\n&quot;, 
+    &quot;```\n&quot;, 
+    &quot;\n&quot;, 
+    &quot;Looking just at the first row we get `[ 0.34763842,  0.24879643,  0.12789202]`, you can confirm these are the 3 largest probabilities in `a`. You'll also notice `[3, 0, 5]` are the corresponding indices.&quot; 
+   ] 
+  }, 
+  { 
+   &quot;cell_type&quot;: &quot;code&quot;, 
+   &quot;execution_count&quot;: 141, 
+   &quot;metadata&quot;: { 
+    &quot;collapsed&quot;: true 
+   }, 
+   &quot;outputs&quot;: [], 
+   &quot;source&quot;: [ 
+    &quot;### Print out the top five softmax probabilities for the predictions on the German traffic sign images found on the web. \n&quot;, 
+    &quot;### Feel free to use as many code cells as needed.\n&quot;, 
+    &quot;print(\&quot;Top 5\&quot;)\n&quot;, 
+    &quot;print(top_5)&quot; 
+   ] 
+  }, 
+  { 
+   &quot;cell_type&quot;: &quot;markdown&quot;, 
+   &quot;metadata&quot;: {}, 
+   &quot;source&quot;: [ 
+    &quot;For each of the new images, print out the model's softmax probabilities to show the **certainty** of the model's predictions (limit the output to the top 5 probabilities for each image). [`tf.nn.top_k`](https://www.tensorflow.org/versions/r0.12/api_docs/python/nn.html#top_k) could prove helpful here. \n&quot;, 
+    &quot;\n&quot;, 
+    &quot;The example below demonstrates how tf.nn.top_k can be used to find the top k predictions for each image.\n&quot;, 
+    &quot;\n&quot;, 
+    &quot;`tf.nn.top_k` will return the values and indices (class ids) of the top k predictions. So if k=3, for each sign, it'll return the 3 largest probabilities (out of a possible 43) and the correspoding class ids.\n&quot;, 
+    &quot;\n&quot;, 
+    &quot;Take this numpy array as an example. The values in the array represent predictions. The array contains softmax probabilities for five candidate images with six possible classes. `tf.nn.top_k` is used to choose the three classes with the highest probability:\n&quot;, 
+    &quot;\n&quot;, 
+    &quot;```\n&quot;, 
+    &quot;# (5, 6) array\n&quot;, 
+    &quot;a = np.array([[ 0.24879643,  0.07032244,  0.12641572,  0.34763842,  0.07893497,\n&quot;, 
+    &quot;         0.12789202],\n&quot;, 
+    &quot;       [ 0.28086119,  0.27569815,  0.08594638,  0.0178669 ,  0.18063401,\n&quot;, 
+    &quot;         0.15899337],\n&quot;, 
+    &quot;       [ 0.26076848,  0.23664738,  0.08020603,  0.07001922,  0.1134371 ,\n&quot;, 
+    &quot;         0.23892179],\n&quot;, 
+    &quot;       [ 0.11943333,  0.29198961,  0.02605103,  0.26234032,  0.1351348 ,\n&quot;, 
+    &quot;         0.16505091],\n&quot;, 
+    &quot;       [ 0.09561176,  0.34396535,  0.0643941 ,  0.16240774,  0.24206137,\n&quot;, 
+    &quot;         0.09155967]])\n&quot;, 
+    &quot;```\n&quot;, 
+    &quot;\n&quot;, 
+    &quot;Running it through `sess.run(tf.nn.top_k(tf.constant(a), k=3))` produces:\n&quot;, 
+    &quot;\n&quot;, 
+    &quot;```\n&quot;, 
+    &quot;TopKV2(values=array([[ 0.34763842,  0.24879643,  0.12789202],\n&quot;, 
+    &quot;       [ 0.28086119,  0.27569815,  0.18063401],\n&quot;, 
+    &quot;       [ 0.26076848,  0.23892179,  0.23664738],\n&quot;, 
+    &quot;       [ 0.29198961,  0.26234032,  0.16505091],\n&quot;, 
+    &quot;       [ 0.34396535,  0.24206137,  0.16240774]]), indices=array([[3, 0, 5],\n&quot;, 
+    &quot;       [0, 1, 4],\n&quot;, 
+    &quot;       [0, 5, 1],\n&quot;, 
+    &quot;       [1, 3, 5],\n&quot;, 
+    &quot;       [1, 4, 3]], dtype=int32))\n&quot;, 
+    &quot;```\n&quot;, 
+    &quot;\n&quot;, 
+    &quot;Looking just at the first row we get `[ 0.34763842,  0.24879643,  0.12789202]`, you can confirm these are the 3 largest probabilities in `a`. You'll also notice `[3, 0, 5]` are the corresponding indices.&quot; 
+   ] 
+  }, 
+  { 
+   &quot;cell_type&quot;: &quot;markdown&quot;, 
+   &quot;metadata&quot;: {}, 
+   &quot;source&quot;: [ 
+    &quot;### Project Writeup\n&quot;, 
+    &quot;\n&quot;, 
+    &quot;Once you have completed the code implementation, document your results in a project writeup using this [template](https://github.com/udacity/CarND-Traffic-Sign-Classifier-Project/blob/master/writeup_template.md) as a guide. The writeup can be in a markdown or pdf file. &quot; 
+   ] 
+  }, 
+  { 
+   &quot;cell_type&quot;: &quot;markdown&quot;, 
+   &quot;metadata&quot;: {}, 
+   &quot;source&quot;: [ 
+    &quot;&gt; **Note**: Once you have completed all of the code implementations and successfully answered each question above, you may finalize your work by exporting the iPython Notebook as an HTML document. You can do this by using the menu above and navigating to  \\n\&quot;,\n&quot;, 
+    &quot;    \&quot;**File -&gt; Download as -&gt; HTML (.html)**. Include the finished document along with this notebook as your submission.&quot; 
+   ] 
+  }, 
+  { 
+   &quot;cell_type&quot;: &quot;markdown&quot;, 
+   &quot;metadata&quot;: {}, 
+   &quot;source&quot;: [ 
+    &quot;---\n&quot;, 
+    &quot;\n&quot;, 
+    &quot;## Step 4 (Optional): Visualize the Neural Network's State with Test Images\n&quot;, 
+    &quot;\n&quot;, 
+    &quot; This Section is not required to complete but acts as an additional excersise for understaning the output of a neural network's weights. While neural networks can be a great learning device they are often referred to as a black box. We can understand what the weights of a neural network look like better by plotting their feature maps. After successfully training your neural network you can see what it's feature maps look like by plotting the output of the network's weight layers in response to a test stimuli image. From these plotted feature maps, it's possible to see what characteristics of an image the network finds interesting. For a sign, maybe the inner network feature maps react with high activation to the sign's boundary outline or to the contrast in the sign's painted symbol.\n&quot;, 
+    &quot;\n&quot;, 
+    &quot; Provided for you below is the function code that allows you to get the visualization output of any tensorflow weight layer you want. The inputs to the function should be a stimuli image, one used during training or a new one you provided, and then the tensorflow variable name that represents the layer's state during the training process, for instance if you wanted to see what the [LeNet lab's](https://classroom.udacity.com/nanodegrees/nd013/parts/fbf77062-5703-404e-b60c-95b78b2f3f9e/modules/6df7ae49-c61c-4bb2-a23e-6527e69209ec/lessons/601ae704-1035-4287-8b11-e2c2716217ad/concepts/d4aca031-508f-4e0b-b493-e7b706120f81) feature maps looked like for it's second convolutional layer you could enter conv2 as the tf_activation variable.\n&quot;, 
+    &quot;\n&quot;, 
+    &quot;For an example of what feature map outputs look like, check out NVIDIA's results in their paper [End-to-End Deep Learning for Self-Driving Cars](https://devblogs.nvidia.com/parallelforall/deep-learning-self-driving-cars/) in the section Visualization of internal CNN State. NVIDIA was able to show that their network's inner weights had high activations to road boundary lines by comparing feature maps from an image with a clear path to one without. Try experimenting with a similar test to show that your trained network's weights are looking for interesting features, whether it's looking at differences in feature maps from images with or without a sign, or even what feature maps look like in a trained network vs a completely untrained one on the same sign image.\n&quot;, 
+    &quot;\n&quot;, 
+    &quot;&lt;figure&gt;\n&quot;, 
+    &quot; &lt;img src=\&quot;visualize_cnn.png\&quot; width=\&quot;380\&quot; alt=\&quot;Combined Image\&quot; /&gt;\n&quot;, 
+    &quot; &lt;figcaption&gt;\n&quot;, 
+    &quot; &lt;p&gt;&lt;/p&gt; \n&quot;, 
+    &quot; &lt;p style=\&quot;text-align: center;\&quot;&gt; Your output should look something like this (above)&lt;/p&gt; \n&quot;, 
+    &quot; &lt;/figcaption&gt;\n&quot;, 
+    &quot;&lt;/figure&gt;\n&quot;, 
+    &quot; &lt;p&gt;&lt;/p&gt; \n&quot; 
+   ] 
+  }, 
+  { 
+   &quot;cell_type&quot;: &quot;code&quot;, 
+   &quot;execution_count&quot;: null, 
+   &quot;metadata&quot;: { 
+    &quot;collapsed&quot;: true 
+   }, 
+   &quot;outputs&quot;: [], 
+   &quot;source&quot;: [ 
+    &quot;### Visualize your network's feature maps here.\n&quot;, 
+    &quot;### Feel free to use as many code cells as needed.\n&quot;, 
+    &quot;\n&quot;, 
+    &quot;# image_input: the test image being fed into the network to produce the feature maps\n&quot;, 
+    &quot;# tf_activation: should be a tf variable name used during your training procedure that represents the calculated state of a specific weight layer\n&quot;, 
+    &quot;# activation_min/max: can be used to view the activation contrast in more detail, by default matplot sets min and max to the actual min and max values of the output\n&quot;, 
+    &quot;# plt_num: used to plot out multiple different weight feature map sets on the same block, just extend the plt number for each new feature map entry\n&quot;, 
+    &quot;\n&quot;, 
+    &quot;def outputFeatureMap(image_input, tf_activation, activation_min=-1, activation_max=-1 ,plt_num=1):\n&quot;, 
+    &quot;    # Here make sure to preprocess your image_input in a way your network expects\n&quot;, 
+    &quot;    # with size, normalization, ect if needed\n&quot;, 
+    &quot;    # image_input =\n&quot;, 
+    &quot;    # Note: x should be the same name as your network's tensorflow data placeholder variable\n&quot;, 
+    &quot;    # If you get an error tf_activation is not defined it may be having trouble accessing the variable from inside a function\n&quot;, 
+    &quot;    activation = tf_activation.eval(session=sess,feed_dict={x : image_input})\n&quot;, 
+    &quot;    featuremaps = activation.shape[3]\n&quot;, 
+    &quot;    plt.figure(plt_num, figsize=(15,15))\n&quot;, 
+    &quot;    for featuremap in range(featuremaps):\n&quot;, 
+    &quot;        plt.subplot(6,8, featuremap+1) # sets the number of feature maps to show on each row and column\n&quot;, 
+    &quot;        plt.title('FeatureMap ' + str(featuremap)) # displays the feature map number\n&quot;, 
+    &quot;        if activation_min != -1 &amp; activation_max != -1:\n&quot;, 
+    &quot;            plt.imshow(activation[0,:,:, featuremap], interpolation=\&quot;nearest\&quot;, vmin =activation_min, vmax=activation_max, cmap=\&quot;gray\&quot;)\n&quot;, 
+    &quot;        elif activation_max != -1:\n&quot;, 
+    &quot;            plt.imshow(activation[0,:,:, featuremap], interpolation=\&quot;nearest\&quot;, vmax=activation_max, cmap=\&quot;gray\&quot;)\n&quot;, 
+    &quot;        elif activation_min !=-1:\n&quot;, 
+    &quot;            plt.imshow(activation[0,:,:, featuremap], interpolation=\&quot;nearest\&quot;, vmin=activation_min, cmap=\&quot;gray\&quot;)\n&quot;, 
+    &quot;        else:\n&quot;, 
+    &quot;            plt.imshow(activation[0,:,:, featuremap], interpolation=\&quot;nearest\&quot;, cmap=\&quot;gray\&quot;)&quot; 
+   ] 
+  } 
+ ], 
+ &quot;metadata&quot;: { 
+  &quot;anaconda-cloud&quot;: {}, 
+  &quot;kernelspec&quot;: { 
+   &quot;display_name&quot;: &quot;Python 3&quot;, 
+   &quot;language&quot;: &quot;python&quot;, 
+   &quot;name&quot;: &quot;python3&quot; 
+  }, 
+  &quot;language_info&quot;: { 
+   &quot;codemirror_mode&quot;: { 
+    &quot;name&quot;: &quot;ipython&quot;, 
+    &quot;version&quot;: 3 
+   }, 
+   &quot;file_extension&quot;: &quot;.py&quot;, 
+   &quot;mimetype&quot;: &quot;text/x-python&quot;, 
+   &quot;name&quot;: &quot;python&quot;, 
+   &quot;nbconvert_exporter&quot;: &quot;python&quot;, 
+   &quot;pygments_lexer&quot;: &quot;ipython3&quot;, 
+   &quot;version&quot;: &quot;3.5.2&quot; 
+  } 
+ }, 
+ &quot;nbformat&quot;: 4, 
+ &quot;nbformat_minor&quot;: 1 
+} 
+</span></pre>
+</body>
+</html>
