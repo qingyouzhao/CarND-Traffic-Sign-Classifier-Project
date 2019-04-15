@@ -15,7 +15,10 @@ The goals / steps of this project are the following:
 
 [//]: # "Image References"
 
-[image1]: ./examples/visualization.jpg "Visualization"
+[imageTrainingBar]: ./ReadmePics/Training_Bar.jpg "Training data Visualization"
+
+
+
 [image2]: ./examples/grayscale.jpg "Grayscaling"
 [image3]: ./examples/random_noise.jpg "Random Noise"
 [TrafficSign1]: ./GTSRB_Final_Test_Images/GTSRB/Final_Test/Images/00000.ppm "Traffic Sign 1"
@@ -41,17 +44,21 @@ You're reading it! and here is a link to my [project code](https://github.com/qi
 I used the pandas library to calculate summary statistics of the traffic
 signs data set:
 
-* The size of training set is ?
-* The size of the validation set is ?
-* The size of test set is ?
-* The shape of a traffic sign image is ?
-* The number of unique classes/labels in the data set is ?
+* The size of training set is 34799
+* The size of the validation set is 4410
+* The size of test set is 12630
+* The shape of a traffic sign image is (32,32,3)
+* The number of unique classes/labels in the data set is 43
 
 #### 2. Include an exploratory visualization of the dataset.
 
-Here is an exploratory visualization of the data set. It is a bar chart showing how the data ...
+Here is an exploratory visualization of the data set. It is a bar chart showing how the training  validate and test data
 
-![alt text][image1]
+![alt text][imageTrainingBar]
+
+![imageValidBar](./ReadmePics\Validate_Bar.jpg)
+
+![imageTestBar](.\ReadmePics\Test_Bar.jpg)
 
 ### Design and Test a Model Architecture
 
@@ -63,59 +70,80 @@ Here is an example of a traffic sign image before and after grayscaling.
 
 ![alt text][image2]
 
-I then used local histogram equalization to even out the signal between 0 to 255
+Then, I used local histogram equalization to even out the signal between 0 to 255
 
-As a last step, I normalized the image data to [-0.5,0.5] because this will make the mean and std-dev closer to mu=0 and sigma=1
-
-todo: To add more data to the the data set, I used the following techniques because ... 
-
-todo: Here is an example of an original image and an augmented image:
-
-![alt text][image3]
-
-The difference between the original data set and the augmented data set is the following ... 
+As a last step, I normalized the image data to [0,1] because this will make the mean and std-dev closer to mu=0 and sigma=1
 
 
 #### 2. Describe what your final model architecture looks like including model type, layers, layer sizes, connectivity, etc.) Consider including a diagram and/or table describing the final model.
+
+I used LeNet as the model, defined by `LeNet(x, output_classes=43)` 
 
 My final model consisted of the following layers:
 
 | Layer         		|     Description	        					|
 |:---------------------:|:---------------------------------------------:|
-| Input         		| 32x32x1 RGB image   						|
-| Convolution 3x3     	| 1x1 stride, same padding, outputs 32x32x64 	|
-| RELU					|												|
-| Max pooling	      	| 2x2 stride,  outputs 16x16x64 				|
-| Convolution 3x3	    | etc.      									|
-| Fully connected		| etc.        									|
-| Softmax				| etc.        									|
-|						|												|
-|						|												|
+| Input         		| 32x32x1 RGB image, preprocessed image |
+| Convolution 3x3     	| 1x1 stride, valid padding, outputs 28x28x6, relu activateion |
+| Pooling	| 2x2 stride, outputs 14x14x6 |
+| Convolution 5x5	| 1x1 stride,  valid padding, outputs 10x10x16, relu activation |
+| Pooling	| 2x2 stride, outputs 5x5x16 |
+| Flatten	    | outputs 400    |
+| Fully connected 120	| outputs 120, relu activation |
+| Dropout	| 30% dropout |
+| Fully connected 84	| outputs 84, relu activation |
+| Dropout	| 30% dropout |
+| Fully connected 43	| outputs 43 according to the data set |
+| Softmax				| outputs 43     |
 
 
 
 #### 3. Describe how you trained your model. The discussion can include the type of optimizer, the batch size, number of epochs and any hyperparameters such as learning rate.
 
-To train the model, I used an ....
+Training rate = 0.001
+
+Epochs = 32
+
+Batch size = 64
+
+Dropout rate = 0.3
 
 #### 4. Describe the approach taken for finding a solution and getting the validation set accuracy to be at least 0.93. Include in the discussion the results on the training, validation and test sets and where in the code these were calculated. Your approach may have been an iterative process, in which case, outline the steps you took to get to the final solution and why you chose those steps. Perhaps your solution involved an already well known implementation or architecture. In this case, discuss why you think the architecture is suitable for the current problem.
 
 My final model results were:
-* training set accuracy of ?
-* validation set accuracy of ? 
-* test set accuracy of ?
+* training set accuracy of 99.94%
+* validation set accuracy of 94.33%
+* test set accuracy of 91.72%
 
 If an iterative approach was chosen:
-* What was the first architecture that was tried and why was it chosen?
+* What was the first architecture that was tried and why was it chosen? 
+  * LeNet-5 was chosen as the first architecture
 * What were some problems with the initial architecture?
+  * There is overfitting with the initial architecture, 
 * How was the architecture adjusted and why was it adjusted? Typical adjustments could include choosing a different model architecture, adding or taking away layers (pooling, dropout, convolution, etc), using an activation function or changing the activation function. One common justification for adjusting an architecture would be due to overfitting or underfitting. A high accuracy on the training set but low accuracy on the validation set indicates over fitting; a low accuracy on both sets indicates under fitting.
+  * I added a dropout layer at after the first 2 fully connected layers in the model. The validation set accuracy improved from 91% to 94.33%
 * Which parameters were tuned? How were they adjusted and why?
+  * I made some slight tweaks on the dropout rate of the model and left them at 30% dropout rate
 * What are some of the important design choices and why were they chosen? For example, why might a convolution layer work well with this problem? How might a dropout layer help with creating a successful model?
 
 If a well known architecture was chosen:
 * What architecture was chosen?
+
+  * LeNet-5 was chosen because this is a simple yet powerful architecture.
+
 * Why did you believe it would be relevant to the traffic sign application?
+
+  * LeNet-5 is useful in classifying images and traffic sign application is a image classification model.
+
 * How does the final model's accuracy on the training, validation and test set provide evidence that the model is working well?
+
+  training set accuracy of 99.94%
+
+  validation set accuracy of 94.33%
+
+  test set accuracy of 91.72%
+
+  The result shows there is still some level of overfitting happening with the model but the general performance working well as the validation set and test set accuracy are all above 91%.
 
 
 ### Test a Model on New Images

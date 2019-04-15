@@ -1,0 +1,43 @@
+<html>
+<head>
+<title>code.py</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+.s0 { color: #808080;}
+.s1 { color: #a9b7c6;}
+.s2 { color: #cc7832;}
+.s3 { color: #6a8759;}
+.s4 { color: #6897bb;}
+</style>
+</head>
+<body bgcolor="#2b2b2b">
+<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#606060" >
+<tr><td><center>
+<font face="Arial, Helvetica" color="#000000">
+code.py</font>
+</center></td></tr></table>
+<pre><span class="s0">### Run the predictions here and use the model to output the prediction for each image.</span>
+### Make sure to pre-process the images with the same pre-processing pipeline used earlier.
+### Feel free to use as many code cells as needed.  
+
+# import the inspect_checkpoint library
+<span class="s1">X_prediction = preprocess(prediction_images)</span>
+
+<span class="s2">with </span><span class="s1">tf.Session() </span><span class="s2">as </span><span class="s1">sess:</span>
+    saver.restore(sess<span class="s2">, </span><span class="s3">'./lenet'</span><span class="s1">)</span>
+    result_prediction = sess.run(prediction<span class="s2">, </span><span class="s1">feed_dict={x: X_prediction</span><span class="s2">, </span><span class="s1">y: labelled_classes})</span>
+    result_logits = sess.run(logits<span class="s2">, </span><span class="s1">feed_dict={x: X_prediction</span><span class="s2">, </span><span class="s1">y: labelled_classes})</span>
+    <span class="s0"># print(&quot;Logits are : {0}&quot;.format(result_logits) )</span>
+    <span class="s1">print(</span><span class="s3">&quot;prediction result: {0}&quot;</span><span class="s1">.format(result_prediction))</span>
+    print(<span class="s3">&quot;Input Classification : {0}&quot;</span><span class="s1">.format(labelled_classes))</span>
+    accuracy = sum(result_prediction == labelled_classes) / len(result_prediction)
+    print(<span class="s3">&quot;Prediction accuracy = {0}&quot;</span><span class="s1">.format(accuracy))</span>
+    top_5 = sess.run(tf.nn.top_k(tf.nn.softmax(logits)<span class="s2">,</span><span class="s4">5</span><span class="s1">)</span><span class="s2">,</span><span class="s1">feed_dict={x: X_prediction</span><span class="s2">, </span><span class="s1">y: labelled_classes})</span>
+    print(<span class="s3">&quot;Top 5&quot;</span><span class="s1">)</span>
+    print(top_5)
+
+
+    
+</pre>
+</body>
+</html>
